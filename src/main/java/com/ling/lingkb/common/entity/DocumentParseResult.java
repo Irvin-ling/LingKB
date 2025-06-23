@@ -15,6 +15,7 @@ package com.ling.lingkb.common.entity;
  * ------------------------------------------------------------------
  */
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,17 +26,17 @@ import lombok.NoArgsConstructor;
  * @since 1.0.0
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DocumentParseResult {
     /**
-     * 文本内容
+     * Document Text
      */
     private String textContent;
+
     /**
-     * 源文件名
-     */
-    private String sourceFileName;
-    /**
-     * 元数据（作者、创建时间等）
+     * Document Metadata
      */
     @Builder.Default
     private DocumentMetadata metadata = new DocumentMetadata();
@@ -43,9 +44,11 @@ public class DocumentParseResult {
     @Data
     @Builder
     @NoArgsConstructor
-    public class DocumentMetadata {
+    @AllArgsConstructor
+    public static class DocumentMetadata {
         private String author;
-        private String creationDate;
-        private String pageCount;
+        private String sourceFileName;
+        private long creationDate;
+        private int pageCount;
     }
 }

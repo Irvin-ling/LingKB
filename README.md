@@ -2,10 +2,10 @@
 Building an Enterprise Knowledge Base in Private Domain
 
 ## 项目简介  
-当前项目处于初始开发阶段，核心聚焦于**文档处理**，功能与文档将持续完善。  
+当前项目处于初始开发阶段，正聚焦于**基层模块**，功能与文档将持续完善。  
 
-## ReadMe文档更新计划  
-- **首个版本发布**：2025-07-04  
+## 文档更新计划  
+- **首个版本发布**：2025-07-31  
 - **包含内容**：项目简单介绍、简述技术架构、功能清单等  
 
 ## 临时说明  
@@ -15,3 +15,12 @@ Building an Enterprise Knowledge Base in Private Domain
 
 ## 致谢  
 感谢你的关注与支持，期待项目后续为你提供更完整的工具能力！
+
+## todoList
+| 模块                | 类名                          | TODO                |
+|---------------------|-------------------------------|---------------------|
+| data.parser         | `ConfluenceTreeParser`        | 图片解析            |
+| data.parser         | `WebUrlParser`                | 图片解析            |
+| data.parser         | `PdfParser`                   | 中文解析、图片解析  |
+| data.parser         | `PptxParser`                  | 图片解析            |
+| data.parser         | `WordParser`                  | 图片解析            |

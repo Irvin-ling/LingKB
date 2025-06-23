@@ -16,14 +16,14 @@ package com.ling.lingkb.common.exception;
  */
 
 /**
- * 文档解析异常
+ * Document parsing exception
  *
  * @author shipotian
  * @date 2025/6/19
  * @since 1.0.0
  */
-public class DocumentParseException extends Exception {
-    DocumentParseException(String message) {
+public class DocumentParseException extends RuntimeException {
+    public DocumentParseException(String message) {
         super(message);
     }
 

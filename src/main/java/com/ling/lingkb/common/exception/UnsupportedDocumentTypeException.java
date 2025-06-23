@@ -16,7 +16,7 @@ package com.ling.lingkb.common.exception;
  */
 
 /**
- * 不支持的文档类型异常
+ * Unsupported document type exception
  *
  * @author shipotian
  * @date 2025/6/19

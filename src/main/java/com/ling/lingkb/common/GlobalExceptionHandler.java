@@ -18,7 +18,7 @@ package com.ling.lingkb.common;
 
 import com.ling.lingkb.common.entity.Reply;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -35,13 +35,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * 全局异常捕捉
-     */
     @ResponseBody
     @ExceptionHandler(Exception.class)
     public Reply exception(Exception e) {
-        log.error("请求发生异常", e);
+        log.error("Request exception occurred", e);
         if (StringUtils.isNotBlank(e.getMessage())) {
             return Reply.failure(e.getMessage());
         }
