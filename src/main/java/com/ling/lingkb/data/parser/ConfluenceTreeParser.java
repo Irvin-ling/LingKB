@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
  * <strong>The path URL needs to include authentication parameters</strong>
  *
  * @author shipotian
- * @since 1.0.0
+ * @version 1.0.0
  */
 @Data
 @Slf4j

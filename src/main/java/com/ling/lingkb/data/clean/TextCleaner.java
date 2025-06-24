@@ -5,55 +5,24 @@ package com.ling.lingkb.data.clean;
  * ------------------------------------------------------------------
  * Product: LingKB
  * Module Name: LingKB
- * Date Created: 2025/6/19
+ * Date Created: 2025/6/24
  * Description:
  * ------------------------------------------------------------------
  * Modification History
  * DATE            Name           Description
  * ------------------------------------------------------------------
- * 2025/6/19       spt
+ * 2025/6/24       spt
  * ------------------------------------------------------------------
  */
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-
 /**
- * 文本清洗
- *
  * @author shipotian
- * @date 2025/6/19
- * @since 1.0.0
+ * @version 1.0.0
+ * @since 2025/6/24
  */
-public class TextCleaner {
+public interface TextCleaner {
 
-    private void basicTextProcessing(DocumentParseResult result) {
-    }
+    String clean(String text);
 
-    private void languageSpecificProcessing(DocumentParseResult result) {
-    }
-
-    private void contentOptimization(DocumentParseResult result) {
-    }
-
-    private void noiseDataFiltering(DocumentParseResult result) {
-    }
-
-    private void structureProcessing(DocumentParseResult result) {
-    }
-
-    private void standardizationOfFormat(DocumentParseResult result) {
-    }
-
-    private void specialCharacterAndSymbolProcessing(DocumentParseResult result) {
-    }
-
-    private void advancedProcessing(DocumentParseResult result) {
-    }
-
-    private void qualityControl(DocumentParseResult result) {
-    }
-
-    private void complianceAndSecurityHandling(DocumentParseResult result) {
-    }
-
+    TextCleaner setNext(TextCleaner next);
 }

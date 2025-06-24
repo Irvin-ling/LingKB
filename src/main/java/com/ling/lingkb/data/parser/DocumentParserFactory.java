@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
  * </p>
  *
  * @author shipotian
- * @since 1.0.0
+ * @version 1.0.0
  */
 @Slf4j
 @Component

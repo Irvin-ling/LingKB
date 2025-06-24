@@ -27,8 +27,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author shipotian
- * @date 2025/6/19
- * @since 1.0.0
+ * @since 2025/6/19
+ * @version 1.0.0
  */
 @Data
 @Slf4j

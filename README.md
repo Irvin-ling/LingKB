@@ -19,6 +19,7 @@ Building an Enterprise Knowledge Base in Private Domain
 ## todoList
 | 模块                | 类名                          | TODO                |
 |---------------------|-------------------------------|---------------------|
+| data.parser         | `tika`                        | 通俗解析逻辑         |
 | data.parser         | `ConfluenceTreeParser`        | 图片解析            |
 | data.parser         | `WebUrlParser`                | 图片解析            |
 | data.parser         | `PdfParser`                   | 中文解析、图片解析   |
