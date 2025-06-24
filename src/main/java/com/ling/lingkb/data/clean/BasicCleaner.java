@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,6 +22,9 @@ import org.springframework.stereotype.Component;
  * 3. Normalizing punctuation (full-width to half-width, unifying quotes/brackets)
  * 4. Cleaning up excessive whitespace and line breaks
  * 5. Standardizing case formatting
+ * 6. Unify hyphens (convert different hyphen characters to a standard hyphen '-')
+ * 7. Standardize currency symbols (e.g., convert '￥' to '¥')
+ * 8. Process escape characters (e.g., convert HTML entities to corresponding characters)
  *
  * @author shipotian
  * @version 1.0.0
@@ -94,6 +98,12 @@ public class BasicCleaner extends AbstractTextCleaner {
             text = text.toLowerCase();
         }
 
+        // 6. Unified hyphens
+        text = unifyHyphens(text);
+        // 7. Standardize currency
+        text = standardizeCurrencySymbols(text);
+        // 8. Process escape characters
+        text = processEscapeCharacters(text);
         return text;
     }
 
@@ -285,5 +295,58 @@ public class BasicCleaner extends AbstractTextCleaner {
 
         // Remove the leading and trailing spaces
         return text.trim();
+    }
+
+    /**
+     * Converts various hyphen characters to the standard ASCII hyphen '-'.
+     * Handles en dash (–), em dash (—), minus sign (−), and other similar characters.
+     */
+    private static String unifyHyphens(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        // Replace en dash, em dash, minus sign, and other hyphen-like characters
+        return text.replaceAll("[–—−‐‑‒–—―]", "-");
+    }
+
+    /**
+     * Standardizes currency symbols to their canonical forms.
+     * Specifically converts the full-width yen symbol (￥) to the half-width yen symbol (¥).
+     */
+    private static String standardizeCurrencySymbols(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+        // Convert full-width yen symbol to half-width yen symbol
+        text = text.replace("C$", "CA$");
+        text = text.replace("A$", "AU$");
+        return text.replace('￥', '¥');
+    }
+
+    /**
+     * Processes escape characters and converts HTML entities to their corresponding characters.
+     * Handles common entities such as &lt;, &gt;, &amp;, &quot;, and numeric entities (e.g., &amp;#169;).
+     */
+    private static String processEscapeCharacters(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        // Basic HTML entity conversions
+        text = text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("&quot;", "\"")
+                .replace("&apos;", "'");
+
+        // Convert numeric entities (e.g., &#169; to ©)
+        Pattern entityPattern = Pattern.compile("&#(\\d+);");
+        Matcher matcher = entityPattern.matcher(text);
+        StringBuffer sb = new StringBuffer();
+
+        while (matcher.find()) {
+            int codePoint = Integer.parseInt(matcher.group(1));
+            matcher.appendReplacement(sb, String.valueOf(Character.toChars(codePoint)));
+        }
+        matcher.appendTail(sb);
+
+        return sb.toString();
     }
 }
