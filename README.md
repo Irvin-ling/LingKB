@@ -26,3 +26,4 @@ Building an Enterprise Knowledge Base in Private Domain
 | data.parser         | `PptxParser`                  | 图片解析            |
 | data.parser         | `WordParser`                  | 图片解析            |
 | data.parser         | `***`                         | 字符串格式统一       |
+| data.clean          | `***`                         | 各清洗类的使用       |

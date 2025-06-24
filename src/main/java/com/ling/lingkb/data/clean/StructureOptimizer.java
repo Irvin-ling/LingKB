@@ -78,7 +78,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return processedText;
     }
 
-    private static String removeHeaderFooter(String text) {
+    private String removeHeaderFooter(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -86,7 +86,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return matcher.replaceAll("");
     }
 
-    public static String extractTableOfContents(String text) {
+    private String extractTableOfContents(String text) {
         StringBuilder tocBuilder = new StringBuilder();
         StringBuilder contentBuilder = new StringBuilder();
         boolean inTocSection = false;
@@ -118,7 +118,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
                 .toJSONString();
     }
 
-    private static String processFootnotes(String text) {
+    private String processFootnotes(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -135,7 +135,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return contentMatcher.replaceAll("");
     }
 
-    private static String removeWatermark(String text) {
+    private String removeWatermark(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -143,14 +143,14 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return matcher.replaceAll("");
     }
 
-    private static String reorganizeParagraphs(String text) {
+    private String reorganizeParagraphs(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
         return text.replaceAll("(\\r?\\n){3,}", "\n\n");
     }
 
-    private static String normalizeHeadings(String text) {
+    private String normalizeHeadings(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -171,7 +171,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return result.toString();
     }
 
-    private static int detectHeadingLevel(String line) {
+    private int detectHeadingLevel(String line) {
         if (line == null || line.trim().isEmpty()) {
             return 0;
         }
@@ -184,7 +184,7 @@ public class StructureOptimizer extends AbstractTextCleaner {
         return 0;
     }
 
-    private static String processListItems(String text) {
+    private String processListItems(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
