@@ -15,10 +15,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,15 +34,17 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.confluence")
 public class ConfluenceTreeParser implements DocumentParser {
-    private static final int MAX_CONTENT_LENGTH = 10_000_000;
-    private static final int TIMEOUT_MS = 30_000;
-    private static final int MAX_DEPTH = 5;
+    private int maxContentLength = 10_000_000;
+    private int timeoutMs = 30_000;
+    private int maxDepth = 5;
     private static final Pattern PAGE_ID_PATTERN = Pattern.compile("/pages/(\\d+)/");
 
     private final Set<String> visitedUrls = new HashSet<>();
-
     private String username;
     private String password;
     private String authToken;
@@ -87,9 +92,10 @@ public class ConfluenceTreeParser implements DocumentParser {
         try {
             parseRecursive(rootUrl, combinedContent, metadata, 0);
             // Apply length limit
-            if (combinedContent.length() > MAX_CONTENT_LENGTH) {
+            if (combinedContent.length() > maxContentLength) {
+                log.warn("current file content truncated due to size limit {}", maxContentLength);
                 result.setTextContent(
-                        combinedContent.substring(0, MAX_CONTENT_LENGTH) + "...[content truncated due to size limit]");
+                        combinedContent.substring(0, maxContentLength) + "...[content truncated due to size limit]");
             } else {
                 result.setTextContent(combinedContent.toString());
             }
@@ -142,12 +148,13 @@ public class ConfluenceTreeParser implements DocumentParser {
 
     private void parseRecursive(String url, StringBuilder combinedContent,
                                 DocumentParseResult.DocumentMetadata metadata, int depth) throws IOException {
-        if (depth > MAX_DEPTH || visitedUrls.contains(url)) {
+        if (depth > maxDepth || visitedUrls.contains(url)) {
             return;
         }
 
         visitedUrls.add(url);
         Document doc = fetchDocumentWithAuth(url);
+        log.info("successfully resolved: {}", url);
 
         if (StringUtils.isBlank(metadata.getAuthor())) {
             metadata.setAuthor(getAuthor(doc));
@@ -161,7 +168,7 @@ public class ConfluenceTreeParser implements DocumentParser {
                 .append("\n\n");
 
         // Recursive processing of subPages
-        if (depth < MAX_DEPTH) {
+        if (depth < maxDepth) {
             for (String childUrl : findChildPageLinks(url)) {
                 parseRecursive(childUrl, combinedContent, metadata, depth + 1);
             }
@@ -171,37 +178,37 @@ public class ConfluenceTreeParser implements DocumentParser {
     private Document fetchDocumentWithAuth(String url) throws IOException {
         switch (authType) {
             case BASIC:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").header("Authorization",
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").header("Authorization",
                         "Basic " + java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()))
                         .get();
             case COOKIE:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").cookie("JSESSIONID", authToken)
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").cookie("JSESSIONID", authToken)
                         .get();
             case TOKEN:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0")
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0")
                         .header("Authorization", "Bearer " + authToken).get();
             case NONE:
             default:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").get();
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").get();
         }
     }
 
     private String fetchStringWithAuth(String url) throws IOException {
         switch (authType) {
             case BASIC:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").header("Authorization",
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").header("Authorization",
                         "Basic " + java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()))
                         .method(Connection.Method.GET).ignoreContentType(true).execute().body();
             case COOKIE:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").cookie("JSESSIONID", authToken)
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").cookie("JSESSIONID", authToken)
                         .method(Connection.Method.GET).ignoreContentType(true).execute().body();
             case TOKEN:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0")
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0")
                         .header("Authorization", "Bearer " + authToken).method(Connection.Method.GET)
                         .ignoreContentType(true).execute().body();
             case NONE:
             default:
-                return Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").method(Connection.Method.GET)
+                return Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").method(Connection.Method.GET)
                         .ignoreContentType(true).execute().body();
         }
     }
@@ -231,6 +238,7 @@ public class ConfluenceTreeParser implements DocumentParser {
         String response = fetchStringWithAuth(apiUrl);
 
         List<JSONObject> list = JSON.parseObject(response).getJSONArray("results").toJavaList(JSONObject.class);
+        log.info("pageId({}) find {} child links", pageId, list.size());
         for (JSONObject obj : list) {
             String childPageId = obj.getString("id");
             String childPageUrl =

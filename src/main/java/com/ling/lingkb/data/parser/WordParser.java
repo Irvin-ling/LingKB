@@ -8,10 +8,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Set;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,9 +26,12 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.word")
 public class WordParser implements DocumentParser {
-    private static final int MAX_TEXT_SIZE = 50 * 1024 * 1024;
+    private int maxTextSize = 10_000_000;
     private static final String TRUNCATION_NOTICE = "\n\n[Document truncated to first 50MB]";
 
     @Override
@@ -93,8 +99,9 @@ public class WordParser implements DocumentParser {
         if (text == null) {
             return "";
         }
-        if (text.length() > MAX_TEXT_SIZE) {
-            return text.substring(0, MAX_TEXT_SIZE) + TRUNCATION_NOTICE;
+        if (text.length() > maxTextSize) {
+            log.warn("current file content truncated due to size limit {}", maxTextSize);
+            return text.substring(0, maxTextSize) + TRUNCATION_NOTICE;
         }
         return text;
     }

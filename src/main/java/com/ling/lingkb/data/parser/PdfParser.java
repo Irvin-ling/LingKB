@@ -2,10 +2,13 @@ package com.ling.lingkb.data.parser;
 
 import com.ling.lingkb.common.entity.DocumentParseResult;
 import com.ling.lingkb.common.exception.DocumentParseException;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -22,10 +25,13 @@ import java.util.Set;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.pdf")
 public class PdfParser implements DocumentParser {
-    private static final int MAX_PAGE_BATCH = 100;
-    private static final int MAX_TEXT_LENGTH = 10_000_000;
+    private int maxPageBatch = 100;
+    private int maxTextLength = 10_000_000;
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
@@ -54,13 +60,14 @@ public class PdfParser implements DocumentParser {
 
             int startPage = 1;
             while (startPage <= totalPages) {
-                int endPage = Math.min(startPage + MAX_PAGE_BATCH - 1, totalPages);
+                int endPage = Math.min(startPage + maxPageBatch - 1, totalPages);
                 stripper.setStartPage(startPage);
                 stripper.setEndPage(endPage);
 
                 String batchText = stripper.getText(document);
-                if (textBuilder.length() + batchText.length() > MAX_TEXT_LENGTH) {
+                if (textBuilder.length() + batchText.length() > maxTextLength) {
                     textBuilder.append("...[content truncated due to size limit]");
+                    log.warn("current file content truncated due to size limit {}", maxTextLength);
                     break;
                 }
                 textBuilder.append(batchText);

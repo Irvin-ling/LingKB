@@ -5,8 +5,11 @@ import com.ling.lingkb.common.exception.DocumentParseException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Set;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,10 +21,13 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.web")
 public class WebUrlParser implements DocumentParser {
-    private static final int MAX_CONTENT_LENGTH = 10_000_000;
-    private static final int TIMEOUT_MS = 30_000;
+    private int maxContentLength = 10_000_000;
+    private int timeoutMs = 30_000;
 
     @Override
     public DocumentParseResult parse(String url) throws DocumentParseException {
@@ -36,15 +42,16 @@ public class WebUrlParser implements DocumentParser {
             new URL(url);
 
             // Fetch and parse the web page
-            Document doc = Jsoup.connect(url).timeout(TIMEOUT_MS).userAgent("Mozilla/5.0").get();
+            Document doc = Jsoup.connect(url).timeout(timeoutMs).userAgent("Mozilla/5.0").get();
 
             // Special handling for doc pages
             String content;
             content = parseGenericWebContent(doc);
 
             // Apply length limit
-            if (content.length() > MAX_CONTENT_LENGTH) {
-                content = content.substring(0, MAX_CONTENT_LENGTH) + "...[content truncated due to size limit]";
+            if (content.length() > maxContentLength) {
+                log.warn("current file content truncated due to size limit {}", maxContentLength);
+                content = content.substring(0, maxContentLength) + "...[content truncated due to size limit]";
             }
 
             result.setTextContent(content);

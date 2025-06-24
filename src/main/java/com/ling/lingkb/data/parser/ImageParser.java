@@ -8,9 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import javax.imageio.ImageIO;
+import lombok.Data;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,13 +29,14 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
 @Component
+@ConfigurationProperties(prefix = "data.parser.image")
 public class ImageParser implements DocumentParser {
 
-    @Value("${image.parser.tess.data.path:/root}")
-    private String tessDataPath;
+    private String tessDataPath = "D://";
 
-    private static final int MAX_TEXT_LENGTH = 10_000_000;
+    private int maxTextLength = 10_000_000;
 
     private final Tesseract tesseract;
 
@@ -45,11 +47,6 @@ public class ImageParser implements DocumentParser {
         this.tesseract.setPageSegMode(6);
         this.tesseract.setOcrEngineMode(1);
         this.tesseract.setHocr(false);
-    }
-
-    public void setTessDataPath(String tessDataPath) {
-        this.tessDataPath = tessDataPath;
-        this.tesseract.setDatapath(tessDataPath);
     }
 
     @Override
@@ -65,15 +62,14 @@ public class ImageParser implements DocumentParser {
 
             // OCR processing
             String extractedText = tesseract.doOCR(image);
-            if (extractedText.length() > MAX_TEXT_LENGTH) {
+            if (extractedText.length() > maxTextLength) {
                 extractedText =
-                        extractedText.substring(0, MAX_TEXT_LENGTH) + "\n\n[Content truncated due to size limit]";
+                        extractedText.substring(0, maxTextLength) + "\n\n[Content truncated due to size limit]";
             }
 
             result.setTextContent(extractedText);
             result.setMetadata(DocumentParseResult.DocumentMetadata.builder().sourceFileName(fileName)
                     .creationDate(Files.getLastModifiedTime(filePath).toMillis()).pageCount(1).build());
-
         } catch (IOException e) {
             throw new DocumentParseException("Failed to read image file: " + fileName, e);
         } catch (TesseractException e) {

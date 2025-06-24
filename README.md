@@ -21,6 +21,7 @@ Building an Enterprise Knowledge Base in Private Domain
 |---------------------|-------------------------------|---------------------|
 | data.parser         | `ConfluenceTreeParser`        | 图片解析            |
 | data.parser         | `WebUrlParser`                | 图片解析            |
-| data.parser         | `PdfParser`                   | 中文解析、图片解析  |
+| data.parser         | `PdfParser`                   | 中文解析、图片解析   |
 | data.parser         | `PptxParser`                  | 图片解析            |
 | data.parser         | `WordParser`                  | 图片解析            |
+| data.parser         | `***`                         | 字符串格式统一       |

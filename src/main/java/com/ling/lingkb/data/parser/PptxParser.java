@@ -9,12 +9,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFNotes;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,10 +29,13 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.pptx")
 public class PptxParser implements DocumentParser {
-    private static final int MAX_SLIDES_BATCH = 100;
-    private static final int MAX_TEXT_LENGTH = 10_000_000;
+    private int maxSlidesBatch = 100;
+    private int maxTextLength = 10_000_000;
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
@@ -51,8 +57,9 @@ public class PptxParser implements DocumentParser {
 
             // Extract text content
             String textContent = extractSlideText(ppt);
-            if (textContent.length() > MAX_TEXT_LENGTH) {
-                textContent = textContent.substring(0, MAX_TEXT_LENGTH) + "...[truncated]";
+            if (textContent.length() > maxTextLength) {
+                log.warn("current file content truncated due to size limit {}", maxTextLength);
+                textContent = textContent.substring(0, maxTextLength) + "...[truncated]";
             }
             result.setTextContent(textContent);
 
@@ -74,7 +81,7 @@ public class PptxParser implements DocumentParser {
         int slideIndex = 0;
 
         while (slideIndex < slides.size()) {
-            int endIndex = Math.min(slideIndex + MAX_SLIDES_BATCH, slides.size());
+            int endIndex = Math.min(slideIndex + maxSlidesBatch, slides.size());
 
             for (int i = slideIndex; i < endIndex; i++) {
                 XSLFSlide slide = slides.get(i);
@@ -96,7 +103,7 @@ public class PptxParser implements DocumentParser {
                 contentBuilder.append("\n");
 
                 // Check size limit
-                if (contentBuilder.length() > MAX_TEXT_LENGTH) {
+                if (contentBuilder.length() > maxTextLength) {
                     return contentBuilder.toString();
                 }
             }

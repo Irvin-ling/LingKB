@@ -12,10 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,12 +25,14 @@ import org.springframework.stereotype.Component;
  * @date 2025/6/19
  * @since 1.0.0
  */
+@Data
 @Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.csv")
 public class CsvParser implements DocumentParser {
-    private static final int DEFAULT_BATCH_SIZE = 1000;
-    private static final int MAX_ROWS = 100_000;
-    private static final int MAX_COLUMNS = 100;
+    private int defaultBatchSize = 1000;
+    private int maxRows = 100_000;
+    private int maxColumns = 100;
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
@@ -46,15 +50,15 @@ public class CsvParser implements DocumentParser {
             // Using streaming processing to process data in batches
             try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8);
                  CSVParser csvParser = new CSVParser(reader, format)) {
-                List<List<String>> batch = new ArrayList<>(DEFAULT_BATCH_SIZE);
+                List<List<String>> batch = new ArrayList<>(defaultBatchSize);
                 for (CSVRecord record : csvParser) {
-                    if (rowCounter.incrementAndGet() > MAX_ROWS) {
-                        log.warn("CSV file exceeds the maximum line limit {}, processing has been stopped", MAX_ROWS);
+                    if (rowCounter.incrementAndGet() > maxRows) {
+                        log.warn("current file content truncated due to size limit {} rows", maxRows);
                         break;
                     }
                     List<String> row = convertToRow(record);
                     batch.add(row);
-                    if (batch.size() >= DEFAULT_BATCH_SIZE) {
+                    if (batch.size() >= defaultBatchSize) {
                         processBatch(batch, result);
                         batch.clear();
                     }
@@ -72,7 +76,7 @@ public class CsvParser implements DocumentParser {
 
     private List<String> convertToRow(CSVRecord record) {
         List<String> row = new ArrayList<>();
-        for (int i = 0; i < record.size() && i < MAX_COLUMNS; i++) {
+        for (int i = 0; i < record.size() && i < maxColumns; i++) {
             row.add(record.get(i));
         }
         return row;

@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -20,12 +22,21 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author shipotian
+ * @date 2025/6/19
+ * @since 1.0.0
+ */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.excel")
 public class ExcelParser implements DocumentParser {
-    private static final int DEFAULT_MAX_ROWS = 10000;
-    private static final int MAX_CELL_LENGTH = 32767;
+    private int defaultMaxRows = 10000;
+    private int maxCellLength = 32767;
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
@@ -82,6 +93,7 @@ public class ExcelParser implements DocumentParser {
         int rowCount = 0;
 
         for (Sheet sheet : workbook) {
+            log.info("Currently parsing sheet {}", sheet.getSheetName());
             if (isSheetEmpty(sheet)) {
                 documentMetadata.setPageCount(documentMetadata.getPageCount() - 1);
                 continue;
@@ -95,7 +107,8 @@ public class ExcelParser implements DocumentParser {
                 if (row == null) {
                     continue;
                 }
-                if (rowCount >= DEFAULT_MAX_ROWS) {
+                if (rowCount >= defaultMaxRows) {
+                    log.warn("current file content truncated due to size limit {} rows", defaultMaxRows);
                     break;
                 }
 
@@ -107,7 +120,7 @@ public class ExcelParser implements DocumentParser {
 
                 // Add row data
                 contentBuilder.append(String.join(" | ", rowData)).append("\n");
-                rowCount++;
+                log.debug("Currently parsing row {}", rowCount++);
             }
 
             // Add separators between tables
@@ -168,7 +181,7 @@ public class ExcelParser implements DocumentParser {
         if (value == null) {
             return null;
         }
-        return value.length() > MAX_CELL_LENGTH ? value.substring(0, MAX_CELL_LENGTH) + "...[truncated]" : value;
+        return value.length() > maxCellLength ? value.substring(0, maxCellLength) + "...[truncated]" : value;
     }
 
     @Override

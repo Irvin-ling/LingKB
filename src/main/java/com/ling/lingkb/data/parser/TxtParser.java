@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,10 +22,13 @@ import org.springframework.stereotype.Component;
  * @author shipotian
  * @since 1.0.0
  */
+@Data
+@Slf4j
 @Component
+@ConfigurationProperties(prefix = "data.parser.txt")
 public class TxtParser implements DocumentParser {
-    private static final int MAX_LINES = 100_000;
-    private static final int MAX_TEXT_LENGTH = 10_000_000;
+    private int maxTextLength = 10_000_000;
+    private int maxLines = 100_000;
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
@@ -35,8 +41,9 @@ public class TxtParser implements DocumentParser {
             int lineCount = 0;
             long charCount = 0;
 
-            while ((line = reader.readLine()) != null && lineCount < MAX_LINES) {
-                if (charCount + line.length() > MAX_TEXT_LENGTH) {
+            while ((line = reader.readLine()) != null && lineCount < maxLines) {
+                if (charCount + line.length() > maxTextLength) {
+                    log.warn("current file content truncated due to size limit {}", maxTextLength);
                     textBuilder.append("...[content truncated due to size limit]");
                     break;
                 }
