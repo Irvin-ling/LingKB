@@ -1,19 +1,4 @@
 package com.ling.lingkb.data.clean;
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/24
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/24       spt
- * ------------------------------------------------------------------
- */
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.ling.lingkb.util.LanguageUtil;
@@ -24,6 +9,7 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -59,7 +45,8 @@ public class LanguageCleaner extends AbstractTextCleaner {
 
     @Override
     public String doClean(String text) {
-        if (text == null || text.isEmpty()) {
+        log.info("Text language-specific processing...");
+        if (StringUtils.isBlank(text)) {
             return text;
         }
 

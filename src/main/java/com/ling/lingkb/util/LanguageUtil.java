@@ -1,19 +1,5 @@
 package com.ling.lingkb.util;
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/24
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/24       spt
- * ------------------------------------------------------------------
- */
+
 
 import com.google.common.base.Optional;
 import com.hankcs.hanlp.HanLP;

@@ -101,6 +101,7 @@ public class BasicCleaner extends AbstractTextCleaner {
      * Encoding conversion and garbled code repair
      */
     private String fixEncoding(String text) {
+        log.info("Text basic cleaning...");
         if (text == null || text.isEmpty()) {
             return text;
         }
