@@ -1,6 +1,5 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.data.processor;
 
-import com.alibaba.fastjson.JSONObject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -8,19 +7,17 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * A utility class for processing document structure, including:
  * 1. Removal of headers and footers
- * 2. Extraction and separation of table of contents/index
- * 3. Handling of footnotes/endnotes
- * 4. Deletion of watermarks/copyright information
- * 5. Paragraph reorganization (combining consecutive empty lines)
- * 6. Heading level normalization (standardizing heading formats)
- * 7. List item processing (unifying list formats)
+ * 2. Handling of footnotes/endnotes
+ * 3. Deletion of watermarks/copyright information
+ * 4. Paragraph reorganization (combining consecutive empty lines)
+ * 5. Heading level normalization (standardizing heading formats)
+ * 6. List item processing (unifying list formats)
  *
  * @author shipotian
  * @version 1.0.0
@@ -30,18 +27,12 @@ import org.springframework.stereotype.Component;
 @Component
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ConfigurationProperties(prefix = "data.clean.structure")
-public class StructureOptimizer extends AbstractTextCleaner {
-    private boolean enableOptimizer = true;
-    private boolean tocOptimizer = false;
+@ConfigurationProperties(prefix = "data.processor.structure")
+public class StructureProcessor extends AbstractProcessor {
+    private boolean enable = true;
 
     private static final Pattern HEADER_FOOTER_PATTERN =
             Pattern.compile("^.*?(?=\r?\n\r?\n)|(?<=\r?\n\r?\n).*?$", Pattern.MULTILINE | Pattern.DOTALL);
-
-    private static final Pattern TOC_TITLE_PATTERN =
-            Pattern.compile("^(.*?[目录|TOC].*?)$", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
-
-    private static final Pattern TOC_ITEM_PATTERN = Pattern.compile("^(.*?)\\.+\\s*(\\d+)$", Pattern.MULTILINE);
 
     private static final Pattern FOOTNOTE_REF_PATTERN = Pattern.compile("\\[([0-9]+)\\]");
 
@@ -59,23 +50,17 @@ public class StructureOptimizer extends AbstractTextCleaner {
             Pattern.compile("^(\\d+\\.|•|\\-|\\*|\\+|\\)|\\])\\s+(.*)$", Pattern.MULTILINE);
 
     @Override
-    protected String doClean(String text) {
-        log.info("Processing document structure...");
-        if (!enableOptimizer || StringUtils.isBlank(text)) {
-            return text;
+    String doClean(String text) {
+        log.info("StructureProcessor.doClean()...");
+        if (enable) {
+            text = removeHeaderFooter(text);
+            text = removeWatermark(text);
+            text = processFootnotes(text);
+            text = reorganizeParagraphs(text);
+            text = normalizeHeadings(text);
+            text = processListItems(text);
         }
-        String processedText = text;
-        processedText = removeHeaderFooter(processedText);
-        processedText = removeWatermark(processedText);
-        processedText = processFootnotes(processedText);
-        processedText = reorganizeParagraphs(processedText);
-        processedText = normalizeHeadings(processedText);
-        processedText = processListItems(processedText);
-        if (tocOptimizer) {
-            processedText = extractTableOfContents(text);
-        }
-
-        return processedText;
+        return text;
     }
 
     private String removeHeaderFooter(String text) {
@@ -84,38 +69,6 @@ public class StructureOptimizer extends AbstractTextCleaner {
         }
         Matcher matcher = HEADER_FOOTER_PATTERN.matcher(text);
         return matcher.replaceAll("");
-    }
-
-    private String extractTableOfContents(String text) {
-        StringBuilder tocBuilder = new StringBuilder();
-        StringBuilder contentBuilder = new StringBuilder();
-        boolean inTocSection = false;
-
-        String[] lines = text.split("\\r?\\n");
-        for (String line : lines) {
-            if (TOC_TITLE_PATTERN.matcher(line).matches()) {
-                inTocSection = true;
-                tocBuilder.append(line).append("\n");
-                continue;
-            }
-
-            if (inTocSection) {
-                if (line.trim().isEmpty()) {
-                    inTocSection = false;
-                    contentBuilder.append(line).append("\n");
-                } else if (TOC_ITEM_PATTERN.matcher(line).matches()) {
-                    tocBuilder.append(line).append("\n");
-                } else {
-                    inTocSection = false;
-                    contentBuilder.append(line).append("\n");
-                }
-            } else {
-                contentBuilder.append(line).append("\n");
-            }
-        }
-
-        return new JSONObject().fluentPut("toc", tocBuilder.toString()).fluentPut("content", contentBuilder.toString())
-                .toJSONString();
     }
 
     private String processFootnotes(String text) {

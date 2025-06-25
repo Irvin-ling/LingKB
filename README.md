@@ -13,6 +13,11 @@ Building an Enterprise Knowledge Base in Private Domain
 - 邮箱：`zhengh@dtdream.com`
 - GitHub Issues：[仓库链接](https://github.com/ShiPotian89/LingKB/issues)
 
+## 代码部分内容释义
+| 内容                | 说明                          |
+|---------------------|------------------------------|
+| @CodeHint           | 关键的代码                    |
+
 ## 致谢  
 感谢你的关注与支持，期待项目后续为你提供更完整的工具能力！
 
@@ -27,3 +32,5 @@ Building an Enterprise Knowledge Base in Private Domain
 | data.parser         | `WordParser`                  | 图片解析            |
 | data.parser         | `***`                         | 字符串格式统一       |
 | data.clean          | `***`                         | 各清洗类的使用       |
+| data.clean          | `***`                         | 质量控制            |
+| data.clean          | `***`                         | 合规与安全处理       |

@@ -1,6 +1,7 @@
 package com.ling.lingkb.util;
 
 
+import com.ling.lingkb.util.language.LanguageUtil;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,7 +22,7 @@ public class SimHashUtil {
         if (text == null || text.isEmpty()) {
             return 0L;
         }
-        String[] words = LanguageUtil.tokenize(text).split(" ");
+        List<String> words = LanguageUtil.tokenize(text);
         long[] features = new long[HASH_BITS];
         for (String word : words) {
             long hash = hash(word);

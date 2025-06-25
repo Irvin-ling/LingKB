@@ -1,5 +1,6 @@
 package com.ling.lingkb.data.parser;
 
+import com.ling.lingkb.common.entity.CodeHint;
 import com.ling.lingkb.common.entity.DocumentParseResult;
 import com.ling.lingkb.common.exception.DocumentParseException;
 import java.io.File;
@@ -55,7 +56,7 @@ public class DocumentParserFactory {
      * @return the document parser instance
      * @throws DocumentParseException if no parser is found for the extension
      */
-    public DocumentParser getParser(String extension) {
+    private DocumentParser getParser(String extension) {
         String lowerExt = extension.toLowerCase();
         return parserCache.computeIfAbsent(lowerExt, ext -> parsers.stream().filter(p -> p.supports(ext)).findFirst()
                 .orElseThrow(() -> new DocumentParseException("No parser found for extension: " + ext)));
@@ -68,6 +69,7 @@ public class DocumentParserFactory {
      * @return the parsing result
      * @throws DocumentParseException if parsing fails
      */
+    @CodeHint
     public DocumentParseResult parse(File file) throws DocumentParseException {
         try {
             Path path = file.toPath();
@@ -87,6 +89,7 @@ public class DocumentParserFactory {
      * @return list of parsing results
      * @throws DocumentParseException if batch parsing fails
      */
+    @CodeHint
     public List<DocumentParseResult> batchParse(File file) throws DocumentParseException {
         try {
             if (file.isDirectory()) {

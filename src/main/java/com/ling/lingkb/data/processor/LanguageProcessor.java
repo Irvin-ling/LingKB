@@ -1,7 +1,6 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.data.processor;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
-import com.ling.lingkb.util.LanguageUtil;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Matcher;
@@ -9,7 +8,6 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +15,8 @@ import org.springframework.stereotype.Component;
  * Language-specific Processing Class.
  * Features include:
  * 1. Conversion between Simplified and Traditional Chinese.
- * 2. Word segmentation and stop word filtering.
- * 3. English word stemming and lemmatization.
- * 4. Normalization of numbers and units (e.g., "100 米" → "100m").
- * 5. Standardization of time and date (e.g., "yesterday" → "2023-06-23").
+ * 2. Normalization of numbers and units (e.g., "100 米" → "100m").
+ * 3. Standardization of time and date (e.g., "yesterday" → "2023-06-23").
  *
  * @author shipotian
  * @version 1.0.0
@@ -30,11 +26,12 @@ import org.springframework.stereotype.Component;
 @Component
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ConfigurationProperties(prefix = "data.clean.language")
-public class LanguageCleaner extends AbstractTextCleaner {
+@ConfigurationProperties(prefix = "data.processor.language")
+public class LanguageProcessor extends AbstractProcessor {
+
     private boolean convertTraditionalToSimple = true;
     private boolean removeStopWords = true;
-    private boolean stemEnglishWords = true;
+    private boolean stemEnglishWords = false;
     private boolean lemmatizeEnglishWords = true;
     private boolean normalizeNumbersAndUnits = true;
     private boolean normalizeDateTime = true;
@@ -44,36 +41,20 @@ public class LanguageCleaner extends AbstractTextCleaner {
             Pattern.compile("(昨天|今天|明天|前天|后天|\\d{1,4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}/\\d{1,2}/\\d{2,4})");
 
     @Override
-    public String doClean(String text) {
-        log.info("Text language-specific processing...");
-        if (StringUtils.isBlank(text)) {
-            return text;
-        }
+    String doClean(String text) {
+        log.info("LanguageProcessor.doClean()...");
 
         // 1. 中文繁体转简体
         if (convertTraditionalToSimple) {
             text = ZhConverterUtil.toSimple(text);
         }
 
-        // 2. Tokenization and Stop Word Filtering
-        if (removeStopWords) {
-            text = LanguageUtil.tokenize(text);
-        }
-
-        // 3. English Stemming and Lemmatization
-        if (stemEnglishWords) {
-            text = LanguageUtil.stem(text);
-        }
-        if (lemmatizeEnglishWords) {
-            text = LanguageUtil.lemmatize(text);
-        }
-
-        // 4. Digital and Unit Normalization
+        // 2. Digital and Unit Normalization
         if (normalizeNumbersAndUnits) {
             text = normalizeNumbersAndUnits(text);
         }
 
-        // 5. Time/Date Standardization
+        // 3. Time/Date Standardization
         if (normalizeDateTime) {
             text = normalizeDateTime(text);
         }

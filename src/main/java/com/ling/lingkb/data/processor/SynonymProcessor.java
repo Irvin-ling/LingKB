@@ -1,7 +1,8 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.data.processor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.ling.lingkb.common.entity.CodeHint;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -13,7 +14,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
  * 3. Term unification
  * 4. Abbreviation expansion
  * <p>
- * Modify the /resource/term_mapping.json file for mapping configuration.
+ * You can implement custom term rules by configuring the `/resource/term_mapping.json` file.
  *
  * @author shipotian
  * @version 1.0.0
@@ -36,43 +36,45 @@ import org.springframework.stereotype.Component;
 @Component
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ConfigurationProperties(prefix = "data.clean.optimize")
-public class ContentOptimizer extends AbstractTextCleaner {
-    private boolean enableOptimizer = false;
+@ConfigurationProperties(prefix = "data.processor.synonym")
+public class SynonymProcessor extends AbstractProcessor {
+    private boolean enable = false;
     private static Map<String, String> termMapping = new ConcurrentHashMap<>();
     private static Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
     private static List<String> sortedTerms;
 
+    @CodeHint
     @Override
-    protected String doClean(String text) {
-        log.info("Multilingual text optimization...");
-        if (!enableOptimizer || StringUtils.isBlank(text)) {
-            return text;
-        }
-        if (termMapping.isEmpty()) {
-            log.info("initialize semantic mapping structure.");
-            try {
-                InputStream inputStream = new ClassPathResource("term_mapping.json").getInputStream();
-                String configString = IOUtils.toString(inputStream, "UTF-8");
-                buildMapping(JSON.parseObject(configString));
-            } catch (IOException e) {
-                log.error("error term_mapping.json:", e);
-                e.printStackTrace();
+    String doClean(String text) {
+        log.info("SynonymProcessor.doClean()...");
+
+        if (enable) {
+            if (termMapping.isEmpty()) {
+                log.info("initialize semantic mapping structure.");
+                try {
+                    InputStream inputStream = new ClassPathResource("term_mapping.json").getInputStream();
+                    String configString = IOUtils.toString(inputStream, "UTF-8");
+                    buildMapping(JSON.parseObject(configString));
+                } catch (IOException e) {
+                    log.error("error term_mapping.json:", e);
+                    e.printStackTrace();
+                }
+
+                // Sort terms by length and prioritize replacing longer terms.
+                sortedTerms = new ArrayList<>(termMapping.keySet());
+                sortedTerms.sort((t1, t2) -> t2.length() - t1.length());
+
+                // Precompile regular expressions
+                patternCache = new ConcurrentHashMap<>(sortedTerms.size());
+                for (String term : sortedTerms) {
+                    patternCache.put(term, Pattern.compile("\\b" + Pattern.quote(term) + "\\b"));
+                }
             }
 
-            // Sort terms by length and prioritize replacing longer terms.
-            sortedTerms = new ArrayList<>(termMapping.keySet());
-            sortedTerms.sort((t1, t2) -> t2.length() - t1.length());
-
-            // Precompile regular expressions
-            patternCache = new ConcurrentHashMap<>(sortedTerms.size());
             for (String term : sortedTerms) {
-                patternCache.put(term, Pattern.compile("\\b" + Pattern.quote(term) + "\\b"));
+                String replacement = termMapping.get(term);
+                text = patternCache.get(term).matcher(text).replaceAll(replacement);
             }
-        }
-        for (String term : sortedTerms) {
-            String replacement = termMapping.get(term);
-            text = patternCache.get(term).matcher(text).replaceAll(replacement);
         }
 
         return text;

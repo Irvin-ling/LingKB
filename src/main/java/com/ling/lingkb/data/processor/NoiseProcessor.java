@@ -1,4 +1,4 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.data.processor;
 
 import com.ling.lingkb.util.SimHashUtil;
 import java.util.Arrays;
@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -28,9 +27,9 @@ import org.springframework.stereotype.Component;
 @Component
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ConfigurationProperties(prefix = "data.clean.noise")
-public class NoiseCleaner extends AbstractTextCleaner {
-    private boolean enableFilter = true;
+@ConfigurationProperties(prefix = "data.processor.noise")
+public class NoiseProcessor extends AbstractProcessor {
+    private boolean enable = true;
     private double duplicateThreshold = 0.9;
     private int minTextLength = 5;
     /**
@@ -65,19 +64,17 @@ public class NoiseCleaner extends AbstractTextCleaner {
     private static final Pattern SPECIAL_SYMBOLS = Pattern.compile("[！！!？?￥$★*()【】{}<>\\[\\]]");
 
     @Override
-    protected String doClean(String text) {
-        log.info("Text content noise data filter...");
-        if (!enableFilter || StringUtils.isBlank(text)) {
-            return text;
+    String doClean(String text) {
+        log.info("NoiseProcessor.doClean()...");
+        if (enable) {
+            // 1. Noise data filtering
+            text = filterShortText(text);
+            // 2. Duplicate text detection and removal
+            text = filterDuplicateText(text);
+            // 3. Advertising/spam recognition and filtering
+            text = filterSpamContent(text);
+            text = desensitizeSensitiveInfo(text);
         }
-        // 1. Noise data filtering
-        text = filterShortText(text);
-        // 2. Duplicate text detection and removal
-        text = filterDuplicateText(text);
-        // 3. Advertising/spam recognition and filtering
-        text = filterSpamContent(text);
-        text = desensitizeSensitiveInfo(text);
-
         return text;
     }
 

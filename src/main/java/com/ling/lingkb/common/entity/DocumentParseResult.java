@@ -21,6 +21,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
+ * Data reception for the data parsing phase
+ *
  * @author shipotian
  * @since 2025/6/19
  * @version 1.0.0
@@ -33,13 +35,13 @@ public class DocumentParseResult {
     /**
      * Document Text
      */
-    private String textContent;
+    String textContent;
 
     /**
      * Document Metadata
      */
     @Builder.Default
-    private DocumentMetadata metadata = new DocumentMetadata();
+    DocumentMetadata metadata = new DocumentMetadata();
 
     @Data
     @Builder

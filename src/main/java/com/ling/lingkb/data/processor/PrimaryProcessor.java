@@ -1,4 +1,4 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.data.processor;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -34,8 +34,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Data
 @EqualsAndHashCode(callSuper = false)
-@ConfigurationProperties(prefix = "data.clean.basic")
-public class BasicCleaner extends AbstractTextCleaner {
+@ConfigurationProperties(prefix = "data.processor.primary")
+public class PrimaryProcessor extends AbstractProcessor {
     private boolean convertToLowercase = true;
     private boolean removeHtmlTags = true;
     private boolean removeUrls = false;
@@ -56,6 +56,7 @@ public class BasicCleaner extends AbstractTextCleaner {
     private static final Pattern EMOJI_PATTERN = Pattern.compile("[\\uD83C-\\uDBFF\\uDC00-\\uDFFF]+");
     private static final Pattern MULTIPLE_WHITESPACE_PATTERN = Pattern.compile("\\s+");
     private static final Pattern LINE_BREAKS_PATTERN = Pattern.compile("[\\r\\n]+");
+    private static final Pattern ENTITY_PATTERN = Pattern.compile("&#(\\d+);");
 
     /**
      * Clean document content
@@ -63,9 +64,10 @@ public class BasicCleaner extends AbstractTextCleaner {
      * @ param document: The document object to be cleaned
      * @ return Cleaned Document Object
      */
-
     @Override
-    public String doClean(String text) {
+    String doClean(String text) {
+        log.info("PrimaryProcessor.doClean()...");
+
         // 1. Encoding conversion and garbled code repair
         text = fixEncoding(text);
 
@@ -100,21 +102,18 @@ public class BasicCleaner extends AbstractTextCleaner {
 
         // 6. Unified hyphens
         text = unifyHyphens(text);
+
         // 7. Standardize currency
         text = standardizeCurrencySymbols(text);
+
         // 8. Process escape characters
-        text = processEscapeCharacters(text);
-        return text;
+        return processEscapeCharacters(text);
     }
 
     /**
      * Encoding conversion and garbled code repair
      */
     private String fixEncoding(String text) {
-        log.info("Text basic cleaning...");
-        if (text == null || text.isEmpty()) {
-            return text;
-        }
         List<Charset> commonCharsets =
                 Arrays.asList(StandardCharsets.ISO_8859_1, Charset.forName("GBK"), StandardCharsets.UTF_16);
 
@@ -337,8 +336,7 @@ public class BasicCleaner extends AbstractTextCleaner {
                 .replace("&apos;", "'");
 
         // Convert numeric entities (e.g., &#169; to ©)
-        Pattern entityPattern = Pattern.compile("&#(\\d+);");
-        Matcher matcher = entityPattern.matcher(text);
+        Matcher matcher = ENTITY_PATTERN.matcher(text);
         StringBuffer sb = new StringBuffer();
 
         while (matcher.find()) {

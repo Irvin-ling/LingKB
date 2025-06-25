@@ -1,27 +1,34 @@
-package com.ling.lingkb.data.clean;
+package com.ling.lingkb.common.entity;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
  * ------------------------------------------------------------------
  * Product: LingKB
  * Module Name: LingKB
- * Date Created: 2025/6/24
+ * Date Created: 2025/6/25
  * Description:
  * ------------------------------------------------------------------
  * Modification History
  * DATE            Name           Description
  * ------------------------------------------------------------------
- * 2025/6/24       spt
+ * 2025/6/25       spt
  * ------------------------------------------------------------------
  */
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * You can customize some cleaning and filtering rules here. The CustomizedCleaner will execute them fixedly.
+ * Critical code hint
+ *
+ * @author shipotian
+ * @version 1.0.0
+ * @since 2025/6/25
  */
-public class CustomizedCleaner extends AbstractTextCleaner {
-    @Override
-    protected String doClean(String text) {
-        //TODO
-        return text;
-    }
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
+@Retention(RetentionPolicy.SOURCE)
+public @interface CodeHint {
+    String value() default "";
 }
