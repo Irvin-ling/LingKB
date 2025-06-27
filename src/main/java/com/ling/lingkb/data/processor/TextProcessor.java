@@ -1,8 +1,5 @@
 package com.ling.lingkb.data.processor;
 
-
-import com.ling.lingkb.common.entity.FeatureEngineeringResult;
-
 /**
  * The {@code TextProcessor} interface defines a contract for components that participate in
  * a text cleaning process, typically used in a chain-of-responsibility design pattern.
@@ -21,9 +18,10 @@ public interface TextProcessor {
      * The exact nature of the cleaning (e.g., removing watermarks, normalizing headings)
      * is defined by the implementing class.
      *
-     * @param input the input data to be cleaned.
+     * @param input the input data to be process.
+     * @return the output data has be processed.
      */
-    void process(FeatureEngineeringResult input);
+    String process(String input);
 
     /**
      * Sets the next {@code TextProcessor} in the chain. This allows for constructing a sequence

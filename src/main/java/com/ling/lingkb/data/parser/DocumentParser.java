@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.nio.file.Path;
 import java.util.Set;
 

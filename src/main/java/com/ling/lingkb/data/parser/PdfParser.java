@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
@@ -74,7 +74,7 @@ public class PdfParser implements DocumentParser {
                 startPage = endPage + 1;
             }
 
-            result.setTextContent(textBuilder.toString());
+            result.setText(textBuilder.toString());
         } catch (IOException e) {
             throw new DocumentParseException("Failed to parse PDF file: " + fileName, e);
         } catch (Exception e) {

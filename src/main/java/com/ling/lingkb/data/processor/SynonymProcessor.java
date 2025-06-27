@@ -2,9 +2,8 @@ package com.ling.lingkb.data.processor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ling.lingkb.common.entity.CodeHint;
-import java.io.IOException;
-import java.io.InputStream;
+import com.ling.lingkb.entity.CodeHint;
+import com.ling.lingkb.util.ResourceUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +12,7 @@ import java.util.regex.Pattern;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,7 +34,7 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.synonym")
-public class SynonymProcessor extends AbstractProcessor {
+public class SynonymProcessor extends AbstractTextProcessor {
     private boolean enable = false;
     private static Map<String, String> termMapping = new ConcurrentHashMap<>();
     private static Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
@@ -45,20 +42,14 @@ public class SynonymProcessor extends AbstractProcessor {
 
     @CodeHint
     @Override
-    String doClean(String text) {
-        log.info("SynonymProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("SynonymProcessor.doProcess()...");
 
         if (enable) {
             if (termMapping.isEmpty()) {
                 log.info("initialize semantic mapping structure.");
-                try {
-                    InputStream inputStream = new ClassPathResource("term_mapping.json").getInputStream();
-                    String configString = IOUtils.toString(inputStream, "UTF-8");
-                    buildMapping(JSON.parseObject(configString));
-                } catch (IOException e) {
-                    log.error("error term_mapping.json:", e);
-                    e.printStackTrace();
-                }
+                String configString = ResourceUtil.getResource("term_mapping.json");
+                buildMapping(JSON.parseObject(configString));
 
                 // Sort terms by length and prioritize replacing longer terms.
                 sortedTerms = new ArrayList<>(termMapping.keySet());

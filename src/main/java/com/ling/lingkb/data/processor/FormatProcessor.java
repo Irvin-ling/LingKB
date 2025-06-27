@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.format")
-public class FormatProcessor extends AbstractProcessor {
+public class FormatProcessor extends AbstractTextProcessor {
     private boolean enable = true;
     /**
      * 0-mark
@@ -40,8 +40,8 @@ public class FormatProcessor extends AbstractProcessor {
     private final static Pattern CODE_BLOCK_PATTERN = Pattern.compile("```([\\s\\S]*?)```", Pattern.MULTILINE);
 
     @Override
-    String doClean(String text) {
-        log.info("FormatProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("FormatProcessor.doProcess()...");
         if (enable) {
             // 1. Table/list flattening
             text = flattenTables(text);

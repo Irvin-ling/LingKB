@@ -1,34 +1,39 @@
-package com.ling.lingkb.common.entity;
+package com.ling.lingkb.util;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
  * ------------------------------------------------------------------
  * Product: LingKB
  * Module Name: LingKB
- * Date Created: 2025/6/25
+ * Date Created: 2025/6/27
  * Description:
  * ------------------------------------------------------------------
  * Modification History
  * DATE            Name           Description
  * ------------------------------------------------------------------
- * 2025/6/25       spt
+ * 2025/6/27       spt
  * ------------------------------------------------------------------
  */
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
+import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
+import org.springframework.core.io.ClassPathResource;
 
 /**
- * Critical code hint
- *
  * @author shipotian
  * @version 1.0.0
- * @since 2025/6/25
+ * @since 2025/6/27
  */
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
-@Retention(RetentionPolicy.SOURCE)
-public @interface CodeHint {
-    String value() default "";
+public class ResourceUtil {
+
+    public static String getResource(String path) {
+        try {
+            InputStream inputStream = new ClassPathResource(path).getInputStream();
+            return IOUtils.toString(inputStream, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
 }

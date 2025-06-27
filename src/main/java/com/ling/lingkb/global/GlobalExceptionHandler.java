@@ -1,4 +1,4 @@
-package com.ling.lingkb.common;
+package com.ling.lingkb.global;
 
 /*
  * ------------------------------------------------------------------
@@ -16,7 +16,7 @@ package com.ling.lingkb.common;
  * ------------------------------------------------------------------
  */
 
-import com.ling.lingkb.common.entity.Reply;
+import com.ling.lingkb.entity.Reply;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.Ordered;

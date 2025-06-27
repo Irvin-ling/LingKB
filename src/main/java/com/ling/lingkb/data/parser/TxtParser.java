@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -53,7 +53,7 @@ public class TxtParser implements DocumentParser {
                 charCount += line.length();
             }
 
-            result.setTextContent(textBuilder.toString());
+            result.setText(textBuilder.toString());
             result.setMetadata(DocumentParseResult.DocumentMetadata.builder().author("Unknown").sourceFileName(fileName)
                     .creationDate(Files.getLastModifiedTime(filePath).toMillis()).pageCount(lineCount).build());
 

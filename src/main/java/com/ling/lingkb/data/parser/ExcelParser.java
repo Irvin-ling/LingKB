@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -77,7 +77,7 @@ public class ExcelParser implements DocumentParser {
             StringBuilder contentBuilder = new StringBuilder();
             DataFormatter formatter = new DataFormatter();
             processWorkbookContent(workbook, contentBuilder, formatter, documentMetadata);
-            result.setTextContent(contentBuilder.toString());
+            result.setText(contentBuilder.toString());
             result.setMetadata(documentMetadata);
         } catch (IOException e) {
             throw new DocumentParseException("Failed to parse Excel file: " + fileName, e);

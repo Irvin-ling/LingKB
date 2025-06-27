@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.structure")
-public class StructureProcessor extends AbstractProcessor {
+public class StructureProcessor extends AbstractTextProcessor {
     private boolean enable = true;
 
     private static final Pattern HEADER_FOOTER_PATTERN =
@@ -50,8 +50,8 @@ public class StructureProcessor extends AbstractProcessor {
             Pattern.compile("^(\\d+\\.|•|\\-|\\*|\\+|\\)|\\])\\s+(.*)$", Pattern.MULTILINE);
 
     @Override
-    String doClean(String text) {
-        log.info("StructureProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("StructureProcessor.doProcess()...");
         if (enable) {
             text = removeHeaderFooter(text);
             text = removeWatermark(text);

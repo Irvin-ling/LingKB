@@ -1,8 +1,8 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
-import com.ling.lingkb.common.exception.UnsupportedDocumentTypeException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
+import com.ling.lingkb.exception.UnsupportedDocumentTypeException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -58,7 +58,7 @@ public class WordParser implements DocumentParser {
              XWPFWordExtractor extractor = new XWPFWordExtractor(doc)) {
 
             String text = truncateText(extractor.getText());
-            result.setTextContent(text);
+            result.setText(text);
 
             // Set metadata
             String author = doc.getProperties().getCoreProperties().getCreator();
@@ -79,7 +79,7 @@ public class WordParser implements DocumentParser {
              WordExtractor extractor = new WordExtractor(doc)) {
 
             String text = truncateText(extractor.getText());
-            result.setTextContent(text);
+            result.setText(text);
 
             // Set metadata
             String author = doc.getSummaryInformation().getAuthor();

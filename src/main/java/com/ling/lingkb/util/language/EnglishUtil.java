@@ -15,24 +15,21 @@ package com.ling.lingkb.util.language;
  * ------------------------------------------------------------------
  */
 
-import com.ling.lingkb.common.entity.Language;
-import edu.stanford.nlp.ling.CoreAnnotations;
+import com.hankcs.hanlp.summary.TextRankSentence;
+import com.ling.lingkb.entity.FeatureExtractResult;
+import com.ling.lingkb.entity.Language;
 import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.CoreDocument;
+import edu.stanford.nlp.pipeline.CoreSentence;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.PropertiesUtils;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.analysis.en.PorterStemFilter;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import opennlp.tools.stemmer.PorterStemmer;
+import org.languagetool.JLanguageTool;
+import org.languagetool.language.AmericanEnglish;
 
 /**
  * @author shipotian
@@ -40,55 +37,45 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  * @since 2025/6/25
  */
 class EnglishUtil {
-    private final static Language LANG = Language.EN;
-    private static final Analyzer ANALYZER = new EnglishAnalyzer();
-    private static StanfordCoreNLP pipeline = new StanfordCoreNLP(PropertiesUtils
-            .asProperties("annotators", "tokenize,ssplit,pos,lemma", "tokenize.language", LANG.getIsoCode()));
+    private static final Pattern PARAGRAPH_PATTERN = Pattern.compile("\\n\\s*\\n");
+    private static JLanguageTool enLangTool = new JLanguageTool(new AmericanEnglish());
+    private static StanfordCoreNLP enPipeline = new StanfordCoreNLP(PropertiesUtils
+            .asProperties("annotators", "tokenize,ssplit,pos,lemma,ner", "tokenize.language",
+                    Language.EN.getIsoCode()));
 
-    static boolean isEnglish(Language lang) {
-        return LANG == lang;
+    static JLanguageTool getEnLangTool() {
+        return enLangTool;
     }
 
-    static List<String> tokenize(String text) {
-        if (text == null || text.isEmpty()) {
-            return Collections.emptyList();
-        }
-        try (TokenStream tokenStream = ANALYZER.tokenStream("field", text)) {
-            CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
-            tokenStream.reset();
-
-            List<String> tokens = new ArrayList<>();
-            while (tokenStream.incrementToken()) {
-                tokens.add(charTermAttribute.toString());
+    static void nlp(FeatureExtractResult input, boolean enableLemma, boolean enableStem, int summarySize,
+                    int keywordSize, int topicSize) {
+        String text = input.getProcessedText();
+        CoreDocument document = enPipeline.processToCoreDocument(text);
+        List<CoreLabel> coreLabels = document.tokens();
+        PorterStemmer porterStemmer = new PorterStemmer();
+        for (CoreLabel coreLabel : coreLabels) {
+            String word = coreLabel.word();
+            input.getStopWordsRemoved().add(word);
+            if (enableLemma) {
+                word = coreLabel.lemma();
+                input.getStemmedOrLemmatized().add(word);
+            } else if (enableStem) {
+                word = porterStemmer.stem(coreLabel.word());
+                input.getStemmedOrLemmatized().add(word);
             }
-            return tokens;
-        } catch (IOException e) {
-            throw new RuntimeException("An IO exception occurred during the word segmentation process.", e);
+            input.getTermFrequency().put(word, input.getTermFrequency().getOrDefault(word, 0) + 1);
         }
-    }
 
-    static List<String> stem(String text) {
-        List<String> stems = new ArrayList<>();
-        try {
-            try (StandardTokenizer tokenizer = new StandardTokenizer()) {
-                tokenizer.setReader(new StringReader(text));
-                TokenStream tokenStream = new PorterStemFilter(tokenizer);
-                CharTermAttribute charTerm = tokenStream.addAttribute(CharTermAttribute.class);
-                tokenStream.reset();
-                while (tokenStream.incrementToken()) {
-                    stems.add(charTerm.toString());
-                }
-            }
-        } catch (IOException e) {
-            return stems;
-        }
-        return stems;
-    }
+        input.getMetricCount().put("charCount", text.length());
+        input.getMetricCount().put("wordCount", document.tokens().size());
 
-    static List<String> lemmatize(String text) {
-        Annotation document = new Annotation(text);
-        pipeline.annotate(document);
-        return document.get(CoreAnnotations.TokensAnnotation.class).stream().map(CoreLabel::lemma)
-                .collect(Collectors.toList());
+        input.getMetricCount().put("sentenceCount", document.sentences().size());
+        input.setSentences(document.sentences().stream().map(CoreSentence::text).collect(Collectors.toList()));
+
+        List<String> paragraphs =
+                Arrays.stream(PARAGRAPH_PATTERN.split(text)).map(String::trim).filter(p -> !p.isEmpty())
+                        .collect(Collectors.toList());
+        input.setParagraphs(paragraphs);
+        //TODO
     }
 }

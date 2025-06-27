@@ -1,4 +1,4 @@
-package com.ling.lingkb.common.entity;
+package com.ling.lingkb.entity;
 
 import java.util.Arrays;
 
@@ -15,7 +15,7 @@ public enum Language {
     /**
      * english
      */
-    EN("英文", "en"),
+    EN("English", "en"),
     /**
      * unknown
      */

@@ -2,8 +2,8 @@ package com.ling.lingkb.data.parser;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -94,10 +94,10 @@ public class ConfluenceTreeParser implements DocumentParser {
             // Apply length limit
             if (combinedContent.length() > maxContentLength) {
                 log.warn("current file content truncated due to size limit {}", maxContentLength);
-                result.setTextContent(
+                result.setText(
                         combinedContent.substring(0, maxContentLength) + "...[content truncated due to size limit]");
             } else {
-                result.setTextContent(combinedContent.toString());
+                result.setText(combinedContent.toString());
             }
             result.setMetadata(metadata);
         } catch (Exception e) {

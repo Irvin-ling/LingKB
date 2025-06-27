@@ -1,7 +1,6 @@
 package com.ling.lingkb.data.processor;
 
 
-import com.ling.lingkb.common.entity.FeatureEngineeringResult;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -9,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
  * @version 1.0.0
  * @since 2025/6/24
  */
-public abstract class AbstractProcessor implements TextProcessor {
+public abstract class AbstractTextProcessor implements TextProcessor {
     private TextProcessor next;
 
     @Override
@@ -19,22 +18,21 @@ public abstract class AbstractProcessor implements TextProcessor {
     }
 
     @Override
-    public void process(FeatureEngineeringResult input) {
-        String text = input.getCleanedTextContent();
+    public String process(String text) {
         if (StringUtils.isNotBlank(text)) {
-            text = doClean(text);
-            input.setCleanedTextContent(text);
+            text = doProcess(text);
             if (next != null) {
-                next.process(input);
+                text = next.process(text);
             }
         }
+        return text;
     }
 
     /**
      * Execute the core processing flow for data cleaning
      *
      * @param text the raw data to be processed
-     * @return the cleaned data
+     * @return the processed data
      */
-    abstract String doClean(String text);
+    abstract String doProcess(String text);
 }

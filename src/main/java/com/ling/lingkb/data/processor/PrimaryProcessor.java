@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.primary")
-public class PrimaryProcessor extends AbstractProcessor {
+public class PrimaryProcessor extends AbstractTextProcessor {
     private boolean convertToLowercase = true;
     private boolean removeHtmlTags = true;
     private boolean removeUrls = false;
@@ -61,12 +61,12 @@ public class PrimaryProcessor extends AbstractProcessor {
     /**
      * Clean document content
      *
-     * @ param document: The document object to be cleaned
-     * @ return Cleaned Document Object
+     * @ param document: The document object to be processed
+     * @ return processed text
      */
     @Override
-    String doClean(String text) {
-        log.info("PrimaryProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("PrimaryProcessor.doProcess()...");
 
         // 1. Encoding conversion and garbled code repair
         text = fixEncoding(text);

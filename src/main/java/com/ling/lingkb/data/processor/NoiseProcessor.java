@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.noise")
-public class NoiseProcessor extends AbstractProcessor {
+public class NoiseProcessor extends AbstractTextProcessor {
     private boolean enable = true;
     private double duplicateThreshold = 0.9;
     private int minTextLength = 5;
@@ -64,8 +64,8 @@ public class NoiseProcessor extends AbstractProcessor {
     private static final Pattern SPECIAL_SYMBOLS = Pattern.compile("[！！!？?￥$★*()【】{}<>\\[\\]]");
 
     @Override
-    String doClean(String text) {
-        log.info("NoiseProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("NoiseProcessor.doProcess()...");
         if (enable) {
             // 1. Noise data filtering
             text = filterShortText(text);

@@ -1,8 +1,10 @@
 package com.ling.lingkb.data.processor;
 
-import com.ling.lingkb.common.entity.CodeHint;
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.entity.FeatureEngineeringResult;
+import com.ling.lingkb.entity.CodeHint;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.entity.TextProcessResult;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -41,13 +43,19 @@ public class TextProcessorFactory {
     }
 
     @CodeHint
-    public FeatureEngineeringResult process(DocumentParseResult parseResult) {
-        FeatureEngineeringResult engineeringResult = new FeatureEngineeringResult(parseResult);
+    public TextProcessResult process(DocumentParseResult parseResult) {
+        TextProcessResult textProcessResult = new TextProcessResult(parseResult);
         TextProcessor textProcessor =
                 primaryProcessor.setNext(languageProcessor).setNext(synonymProcessor).setNext(noiseProcessor)
                         .setNext(structureProcessor).setNext(formatProcessor);
-        textProcessor.process(engineeringResult);
-        log.debug("Successfully completed the processing phase of feature engineering.");
-        return engineeringResult;
+        String processedText = textProcessor.process(textProcessResult.getText());
+        textProcessResult.setProcessedText(processedText);
+        log.debug("Successfully completed the processing phase of text.");
+        return textProcessResult;
+    }
+
+    @CodeHint
+    public List<TextProcessResult> batchProcess(List<DocumentParseResult> parseResults) {
+        return parseResults.stream().map(this::process).collect(Collectors.toList());
     }
 }

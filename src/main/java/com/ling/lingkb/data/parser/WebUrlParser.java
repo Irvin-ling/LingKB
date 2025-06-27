@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Set;
@@ -54,7 +54,7 @@ public class WebUrlParser implements DocumentParser {
                 content = content.substring(0, maxContentLength) + "...[content truncated due to size limit]";
             }
 
-            result.setTextContent(content);
+            result.setText(content);
             result.setMetadata(DocumentParseResult.DocumentMetadata.builder().author(getAuthor(doc)).sourceFileName(url)
                     .creationDate(0).pageCount(1).build());
 

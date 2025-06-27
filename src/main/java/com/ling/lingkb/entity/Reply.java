@@ -1,4 +1,4 @@
-package com.ling.lingkb.common.entity;
+package com.ling.lingkb.entity;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.

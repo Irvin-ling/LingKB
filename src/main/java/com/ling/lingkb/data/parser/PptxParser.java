@@ -1,7 +1,7 @@
 package com.ling.lingkb.data.parser;
 
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -61,7 +61,7 @@ public class PptxParser implements DocumentParser {
                 log.warn("current file content truncated due to size limit {}", maxTextLength);
                 textContent = textContent.substring(0, maxTextLength) + "...[truncated]";
             }
-            result.setTextContent(textContent);
+            result.setText(textContent);
 
         } catch (IOException e) {
             throw new DocumentParseException("Failed to parse PPTX file: " + fileName, e);

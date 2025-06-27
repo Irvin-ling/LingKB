@@ -1,8 +1,8 @@
 package com.ling.lingkb.data.parser;
 
 import com.alibaba.fastjson.JSON;
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.exception.DocumentParseException;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.exception.DocumentParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -84,10 +84,10 @@ public class CsvParser implements DocumentParser {
 
     private void processBatch(List<List<String>> batch, DocumentParseResult result) {
         String jsonBatch = JSON.toJSONString(batch);
-        if (result.getTextContent() == null) {
-            result.setTextContent(jsonBatch);
+        if (result.getText() == null) {
+            result.setText(jsonBatch);
         } else {
-            result.setTextContent(result.getTextContent().substring(0, result.getTextContent().length() - 1) + "," +
+            result.setText(result.getText().substring(0, result.getText().length() - 1) + "," +
                     jsonBatch.substring(1));
         }
     }

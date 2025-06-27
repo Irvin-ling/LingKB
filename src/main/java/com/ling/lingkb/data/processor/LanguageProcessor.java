@@ -27,12 +27,9 @@ import org.springframework.stereotype.Component;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.processor.language")
-public class LanguageProcessor extends AbstractProcessor {
+public class LanguageProcessor extends AbstractTextProcessor {
 
     private boolean convertTraditionalToSimple = true;
-    private boolean removeStopWords = true;
-    private boolean stemEnglishWords = false;
-    private boolean lemmatizeEnglishWords = true;
     private boolean normalizeNumbersAndUnits = true;
     private boolean normalizeDateTime = true;
 
@@ -41,8 +38,8 @@ public class LanguageProcessor extends AbstractProcessor {
             Pattern.compile("(昨天|今天|明天|前天|后天|\\d{1,4}年\\d{1,2}月\\d{1,2}日|\\d{1,2}/\\d{1,2}/\\d{2,4})");
 
     @Override
-    String doClean(String text) {
-        log.info("LanguageProcessor.doClean()...");
+    String doProcess(String text) {
+        log.info("LanguageProcessor.doProcess()...");
 
         // 1. 中文繁体转简体
         if (convertTraditionalToSimple) {

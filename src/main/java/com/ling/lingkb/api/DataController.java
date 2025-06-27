@@ -15,9 +15,9 @@ package com.ling.lingkb.api;
  * ------------------------------------------------------------------
  */
 
-import com.ling.lingkb.common.entity.CodeHint;
-import com.ling.lingkb.common.entity.DocumentParseResult;
-import com.ling.lingkb.common.entity.FeatureEngineeringResult;
+import com.ling.lingkb.entity.CodeHint;
+import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.entity.TextProcessResult;
 import com.ling.lingkb.data.parser.DocumentParserFactory;
 import com.ling.lingkb.data.processor.TextProcessorFactory;
 import java.io.File;
@@ -46,12 +46,8 @@ public class DataController {
 
     @CodeHint(value = "backend logic main entry")
     private void dataImport(File file) {
-        List<FeatureEngineeringResult> list = new ArrayList<>();
         List<DocumentParseResult> documentParseResults = parserFactory.batchParse(file);
-        for (DocumentParseResult parseResult : documentParseResults) {
-            FeatureEngineeringResult featureEngineeringResult = processorFactory.process(parseResult);
-            list.add(featureEngineeringResult);
-        }
-        System.out.println(list.size());
+        List<TextProcessResult> textProcessResults = processorFactory.batchProcess(documentParseResults);
+        System.out.println(textProcessResults.size());
     }
 }

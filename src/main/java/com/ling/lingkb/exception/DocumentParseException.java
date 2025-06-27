@@ -1,4 +1,4 @@
-package com.ling.lingkb.common.exception;
+package com.ling.lingkb.exception;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
