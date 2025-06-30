@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
  * @since 2025/6/25
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
@@ -32,6 +31,6 @@ public class TextProcessResult extends DocumentParseResult {
         this.language = LanguageUtil.detectLanguage(this.text);
     }
 
-    String processedText;
-    Language language;
+    String processedText = null;
+    Language language = Language.UNKNOWN;
 }

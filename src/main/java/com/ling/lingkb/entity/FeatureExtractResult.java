@@ -33,7 +33,6 @@ import lombok.NoArgsConstructor;
  * @since 2025/6/25
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
@@ -60,6 +59,7 @@ public class FeatureExtractResult extends TextProcessResult {
     private Map<String, String> tocMap = new HashMap<>();
     private List<String> keywords = new ArrayList<>();
     private List<String> topics = new ArrayList<>();
+    private String category;
 
     private Map<String, List<String>> namedEntities = new HashMap<>();
     private Map<String, List<String>> posTags = new HashMap<>();

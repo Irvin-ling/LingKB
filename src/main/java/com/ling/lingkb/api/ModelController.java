@@ -1,34 +1,39 @@
-package com.ling.lingkb.util;
+package com.ling.lingkb.api;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
  * ------------------------------------------------------------------
  * Product: LingKB
  * Module Name: LingKB
- * Date Created: 2025/6/27
+ * Date Created: 2025/6/30
  * Description:
  * ------------------------------------------------------------------
  * Modification History
  * DATE            Name           Description
  * ------------------------------------------------------------------
- * 2025/6/27       spt
+ * 2025/6/30       spt
  * ------------------------------------------------------------------
  */
 
-import com.hankcs.hanlp.corpus.io.IOUtil;
+import com.ling.lingkb.llm.ModelTrainer;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
+ * The change of model data
+ *
  * @author shipotian
  * @version 1.0.0
- * @since 2025/6/27
+ * @since 2025/6/30
  */
-public class ResourceUtil {
+@RestController
+@RequestMapping("/model")
+public class ModelController {
+    private ModelTrainer modelTrainer;
 
-    public static String getResource(String path) {
-        if (IOUtil.isFileExisted(path)) {
-            return IOUtil.readTxt(path);
-        } else {
-            return "";
-        }
+    @Autowired
+    public ModelController(ModelTrainer modelTrainer) {
+        this.modelTrainer = modelTrainer;
     }
 }

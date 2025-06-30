@@ -7,12 +7,11 @@ import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.summary.TextRankKeyword;
 import com.hankcs.hanlp.summary.TextRankSentence;
 import com.ling.lingkb.entity.FeatureExtractResult;
-import com.ling.lingkb.util.ResourceUtil;
+import com.ling.lingkb.llm.ModelTrainer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.languagetool.JLanguageTool;
@@ -35,9 +34,8 @@ class ChineseUtil {
 
     static void nlp(FeatureExtractResult input, int summarySize, int keywordSize, int topicSize) {
         String text = input.getProcessedText();
-        Set<String> stopWords = Set.of(ResourceUtil.getResource("hit_stopwords.txt").split("\n"));
         List<Term> terms = HanLP.segment(text).stream()
-                .filter(term -> !stopWords.contains(term.word) && !term.nature.startsWith("w"))
+                .filter(term -> !ModelTrainer.stopWordsZh.contains(term.word) && !term.nature.startsWith("w"))
                 .collect(Collectors.toList());
         for (Term term : terms) {
             String word = term.word;
@@ -66,14 +64,16 @@ class ChineseUtil {
         Map<String, String> tocMap = separateText(text, tocList);
         input.setTocMap(tocMap);
 
-        TermFrequencyCounter  counter = new TermFrequencyCounter();
+        TermFrequencyCounter counter = new TermFrequencyCounter();
         counter.add(terms);
         List<String> topics = counter.top(topicSize).stream().map(TermFrequency::getKey).collect(Collectors.toList());
         input.setTopics(topics);
-        //TODO Text Classification
+
+        String category = ModelTrainer.CLASSIFIER_ZH.classify(text);
+        input.setCategory(category);
     }
 
-    public static Map<String, String> separateText(String text, List<String> tocList) {
+    private static Map<String, String> separateText(String text, List<String> tocList) {
         Map<String, String> result = new HashMap<>();
         String[] parts = text.split("\\n");
         String currentSection = null;

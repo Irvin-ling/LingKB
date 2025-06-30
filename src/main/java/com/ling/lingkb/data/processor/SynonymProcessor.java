@@ -3,7 +3,7 @@ package com.ling.lingkb.data.processor;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ling.lingkb.entity.CodeHint;
-import com.ling.lingkb.util.ResourceUtil;
+import com.ling.lingkb.llm.ModelTrainer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +48,7 @@ public class SynonymProcessor extends AbstractTextProcessor {
         if (enable) {
             if (termMapping.isEmpty()) {
                 log.info("initialize semantic mapping structure.");
-                String configString = ResourceUtil.getResource("term_mapping.json");
-                buildMapping(JSON.parseObject(configString));
+                buildMapping(ModelTrainer.synonymMappings);
 
                 // Sort terms by length and prioritize replacing longer terms.
                 sortedTerms = new ArrayList<>(termMapping.keySet());

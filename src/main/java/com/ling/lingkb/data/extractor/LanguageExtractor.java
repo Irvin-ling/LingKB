@@ -50,6 +50,5 @@ public class LanguageExtractor extends AbstractFeatureExtractor {
            LanguageUtil.correct(input);
         }
         LanguageUtil.nlp(input, enableLemmatize, enableStem, summarySize, keywordSize, topicSize);
-
     }
 }

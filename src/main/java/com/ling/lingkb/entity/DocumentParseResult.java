@@ -28,7 +28,6 @@ import lombok.NoArgsConstructor;
  * @version 1.0.0
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocumentParseResult {
@@ -40,7 +39,6 @@ public class DocumentParseResult {
     /**
      * Document Metadata
      */
-    @Builder.Default
     DocumentMetadata metadata = new DocumentMetadata();
 
     @Data
