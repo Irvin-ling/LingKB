@@ -2,7 +2,6 @@ package com.ling.lingkb.entity;
 
 import com.ling.lingkb.util.language.LanguageUtil;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;

@@ -16,6 +16,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
+ * TODO Recode
  * Multilingual Text Optimizer
  * Handles both English and Chinese text for:
  * 1. Synonym replacement

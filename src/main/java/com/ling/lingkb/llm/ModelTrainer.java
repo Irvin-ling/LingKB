@@ -28,14 +28,13 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "env")
 public class ModelTrainer implements CommandLineRunner {
     private Language lang = Language.ZH;
-    public static Set<String> stopWordsZh;
     public static JSONObject synonymMappings;
     public static final IClassifier CLASSIFIER_ZH = new NaiveBayesClassifier();
     public static LinearClassifier<String, String> CLASSIFIER_EN;
 
+    // TODO Recode
     @Override
     public void run(String... args) throws Exception {
-        stopWordsZh = trainStopWord(ResourceUtil.getResource("hit_stopwords.txt"));
         synonymMappings = trainSynonym(ResourceUtil.getResource("term_mapping.json"));
 
         if (lang == Language.ZH) {
@@ -48,10 +47,6 @@ public class ModelTrainer implements CommandLineRunner {
 
     public void reTrain(ModelType modelType, String modelData) throws IOException {
         switch (modelType) {
-            case STOPWORDS: {
-                stopWordsZh = trainStopWord(modelData);
-                break;
-            }
             case SYNONYM: {
                 synonymMappings = trainSynonym(modelData);
                 break;
@@ -89,10 +84,6 @@ public class ModelTrainer implements CommandLineRunner {
      * different training types
      */
     enum ModelType {
-        /**
-         * stopWord
-         */
-        STOPWORDS,
         /**
          * synonym
          */

@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -61,12 +61,12 @@ public class FeatureExtractResult extends TextProcessResult {
     private List<String> topics = new ArrayList<>();
     private String category;
 
-    private Map<String, List<String>> namedEntities = new HashMap<>();
-    private Map<String, List<String>> posTags = new HashMap<>();
+    private Map<String, Set<String>> posTags = new HashMap<>();
+    private Map<String, Set<String>> namedEntities = new HashMap<>();
+    private int sentimentPolarity;
 
     private double[] textVector = new double[]{};
     private Map<String, Double> similarityMatrix = new HashMap<>();
-    private int sentimentPolarity;
 
     public boolean isChinese() {
         return Language.ZH == this.language;

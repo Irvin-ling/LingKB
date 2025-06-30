@@ -73,24 +73,20 @@ public class LanguageUtil {
         if (input.isChinese()) {
             ChineseUtil.nlp(input, summarySize, keywordSize, topicSize);
         } else if (input.isEnglish()) {
-            EnglishUtil.nlp(input, enableLemma, enableStem, summarySize, keywordSize, topicSize);
+            EnglishUtil.nlp(input, enableLemma, enableStem, summarySize, keywordSize);
         }
     }
 
-
-    public static String textSummarization(String text) {
-        //TODO 文本摘要：HanLP需要去除，統一改用StanfordCoreNLP
-        return text;
-    }
-
-    public static String sentimentTendency(String text) {
-        //TODO 情感倾向：HanLP需要去除，統一改用StanfordCoreNLP
-        return text;
-    }
-
-    public static String classification(String text) {
-        //TODO 情感倾向：HanLP需要去除，統一改用StanfordCoreNLP
-        return text;
+    public static void semantic(FeatureExtractResult input) {
+        if (input.isChinese()) {
+            ChineseUtil.posTags(input);
+            ChineseUtil.ner(input);
+            ChineseUtil.sentimentPolarity(input);
+        } else if (input.isEnglish()) {
+            EnglishUtil.posTags(input);
+            EnglishUtil.ner(input);
+            EnglishUtil.sentimentPolarity(input);
+        }
     }
 
 }
