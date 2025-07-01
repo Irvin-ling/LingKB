@@ -39,7 +39,6 @@ import org.springframework.stereotype.Component;
 @EqualsAndHashCode(callSuper = false)
 @ConfigurationProperties(prefix = "data.extractor.semantic")
 public class LanguageExtractor extends AbstractFeatureExtractor {
-    private boolean reSplice = true;
     private boolean enableCorrect = false;
     private boolean enableLemmatize = true;
     private boolean enableStem = false;

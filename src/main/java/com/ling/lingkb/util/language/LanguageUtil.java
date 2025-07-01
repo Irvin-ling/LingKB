@@ -89,4 +89,12 @@ public class LanguageUtil {
         }
     }
 
+    public static void vector(FeatureExtractResult input) throws IOException {
+        if (input.isChinese()) {
+            ChineseUtil.vector(input);
+        } else if (input.isEnglish()) {
+            EnglishUtil.vector(input);
+        }
+    }
+
 }

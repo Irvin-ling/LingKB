@@ -3,10 +3,8 @@ Building an Enterprise Knowledge Base in Private Domain
 
 ## 项目简介  
 1. 请从 [https://file.hankcs.com/hanlp/data-for-1.7.5.zip](https://file.hankcs.com/hanlp/data-for-1.7.5.zip) 
-   下载 HanLP 的数据包，解压后得到包含 `dictionary`、`model` 等目录的 `data` 文件夹。
-
+   下载 HanLP 的数据包，解压后得到包含 `dictionary`、`model` 等目录的文件夹。
 2. 将解压后的 `data` 文件夹存放至合适路径（例如项目资源目录或本地指定文件夹）。
-
 3. 打开 `hanlp.properties` 配置文件（通常位于项目的 `src/main/resources` 目录），找到 `root` 配置项，
    根据 `data` 文件夹的实际路径进行设置：
    ```properties
@@ -14,6 +12,10 @@ Building an Enterprise Knowledge Base in Private Domain
    root=/opt/HanLP
    # 示例2：若 data 文件夹在D盘根目录
    root=D:/HanLP
+4. 可从 [https://github.com/hankcs/hanlp/wiki/word2vec](https://pan.baidu.com/s/1qYFozrY)
+    下载中文 word2vec 的预训练模型，解压后放置到 `model` 目录下
+5. 可从 [https://nlp.stanford.edu/projects/glove/](https://nlp.stanford.edu/data/glove.6B.zip)
+    下载英文向量的预训练模型，解压后放置到 `model` 目录下
 
 ## 文档更新计划  
 - **首个版本发布**：2025-07-31  

@@ -65,8 +65,8 @@ public class FeatureExtractResult extends TextProcessResult {
     private Map<String, Set<String>> namedEntities = new HashMap<>();
     private int sentimentPolarity;
 
-    private double[] textVector = new double[]{};
-    private Map<String, Double> similarityMatrix = new HashMap<>();
+    private float[] textVector = new float[]{};
+    private float[][] similarityMatrix = new float[][]{};
 
     public boolean isChinese() {
         return Language.ZH == this.language;

@@ -4,12 +4,16 @@ import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.corpus.occurrence.TermFrequency;
 import com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary;
 import com.hankcs.hanlp.mining.word.TermFrequencyCounter;
+import com.hankcs.hanlp.mining.word2vec.DocVectorModel;
+import com.hankcs.hanlp.mining.word2vec.WordVectorModel;
 import com.hankcs.hanlp.seg.common.Term;
 import com.hankcs.hanlp.summary.TextRankKeyword;
 import com.hankcs.hanlp.summary.TextRankSentence;
 import com.hankcs.hanlp.tokenizer.NLPTokenizer;
 import com.ling.lingkb.entity.FeatureExtractResult;
 import com.ling.lingkb.llm.ModelTrainer;
+import com.ling.lingkb.util.ResourceUtil;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +34,7 @@ import org.languagetool.language.Chinese;
 class ChineseUtil {
 
     private static ThreadLocal<List<Term>> termLocal = new ThreadLocal<>();
+    private static DocVectorModel docModel = null;
     private static final Pattern PARAGRAPH_PATTERN = Pattern.compile("(\\n\\s*\\n)|(^\\s{2,})");
     private static final Pattern TOC_PATTERN =
             Pattern.compile("^\\s*(\\d+\\..+|第[一二三四五六七八九十]+章\\s+.+)", Pattern.MULTILINE);
@@ -178,6 +183,18 @@ class ChineseUtil {
         input.setSentimentPolarity(polarity);
     }
 
+    static void vector(FeatureExtractResult input) throws IOException {
+        if(docModel == null) {
+            String gloveVectorModelPath = ResourceUtil.getModelPath("hanlp-wiki-vec-zh.txt");
+            WordVectorModel wordModel = new WordVectorModel(gloveVectorModelPath);
+            docModel = new DocVectorModel(wordModel);
+        }
+        float[] textVector = getTextVector(input.getProcessedText());
+        float[][] similarityMatrix = getSimilarityMatrix(input.getKeywords());
+        input.setTextVector(textVector);
+        input.setSimilarityMatrix(similarityMatrix);
+    }
+
     /**
      * 计算文本的情感得分
      */
@@ -236,5 +253,21 @@ class ChineseUtil {
         } else {
             return 4;
         }
+    }
+
+    private static float[] getTextVector(String text) {
+        return docModel.query(text).getElementArray();
+    }
+
+    private static float[][] getSimilarityMatrix(List<String> keywords) {
+        int size = keywords.size();
+        float[][] matrix = new float[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrix[i][j] = docModel.similarity(keywords.get(i), keywords.get(j));
+            }
+        }
+        return matrix;
     }
 }

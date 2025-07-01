@@ -3,6 +3,7 @@ package com.ling.lingkb.util.language;
 import com.ling.lingkb.entity.FeatureExtractResult;
 import com.ling.lingkb.entity.Language;
 import com.ling.lingkb.llm.ModelTrainer;
+import com.ling.lingkb.util.ResourceUtil;
 import edu.stanford.nlp.ling.BasicDatum;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -11,6 +12,9 @@ import edu.stanford.nlp.pipeline.CoreSentence;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.PropertiesUtils;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,7 +37,8 @@ import org.languagetool.language.AmericanEnglish;
 class EnglishUtil {
     private static ThreadLocal<List<CoreLabel>> labelLocal = new ThreadLocal<>();
     private static ThreadLocal<List<CoreSentence>> sentenceLocal = new ThreadLocal<>();
-
+    private static Map<String, float[]> wordVectors = null;
+    private static int vectorSize = 100;
     private static final Pattern PARAGRAPH_PATTERN = Pattern.compile("\\n\\s*\\n");
     private static final Pattern TOC_PATTERN =
             Pattern.compile("^(\\d+(\\.\\d+)*\\s+|Chapter\\s+\\d+\\.?\\s+|Section\\s+\\d+\\.?\\s+|\\w+\\.\\s+)(.*)$",
@@ -183,5 +188,80 @@ class EnglishUtil {
             }
         }
         input.setSentimentPolarity(polarity);
+    }
+
+    static void vector(FeatureExtractResult input) throws IOException {
+        if (wordVectors == null) {
+            wordVectors = new HashMap<>();
+            String gloveVectorModelPath = ResourceUtil.getModelPath("glove.6B.100d.txt");
+            try (BufferedReader br = new BufferedReader(new FileReader(gloveVectorModelPath))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    String[] parts = line.split(" ");
+                    String word = parts[0];
+                    float[] vector = new float[vectorSize];
+                    for (int i = 0; i < vectorSize; i++) {
+                        vector[i] = Float.parseFloat(parts[i + 1]);
+                    }
+                    wordVectors.put(word, vector);
+                }
+            }
+        }
+        List<CoreLabel> labels = labelLocal.get();
+        float[] textVector = getTextVector(labels);
+        float[][] similarityMatrix = getSimilarityMatrix(input.getKeywords());
+        input.setTextVector(textVector);
+        input.setSimilarityMatrix(similarityMatrix);
+    }
+
+    private static float[] getTextVector(List<CoreLabel> labels) {
+        float[] docVector = new float[vectorSize];
+        int validWords = 0;
+
+        for (CoreLabel token : labels) {
+            String word = token.word().toLowerCase();
+            if (wordVectors.containsKey(word)) {
+                validWords++;
+                float[] wordVector = wordVectors.get(word);
+                for (int i = 0; i < vectorSize; i++) {
+                    docVector[i] += wordVector[i];
+                }
+            }
+        }
+
+        if (validWords > 0) {
+            for (int i = 0; i < vectorSize; i++) {
+                docVector[i] /= validWords;
+            }
+        }
+        return docVector;
+    }
+
+    private static float[][] getSimilarityMatrix(List<String> keywords) {
+        int size = keywords.size();
+        float[][] matrix = new float[size][size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrix[i][j] = cosineSimilarity(keywords.get(i), keywords.get(j));
+            }
+        }
+        return matrix;
+    }
+
+    private static float cosineSimilarity(String keyword1, String keyword2) {
+        float[] v1 = wordVectors.get(keyword1);
+        float[] v2 = wordVectors.get(keyword2);
+        float dotProduct = 0;
+        float norm1 = 0;
+        float norm2 = 0;
+
+        for (int i = 0; i < v1.length; i++) {
+            dotProduct += v1[i] * v2[i];
+            norm1 += v1[i] * v1[i];
+            norm2 += v2[i] * v2[i];
+        }
+
+        return (float) (dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2)));
     }
 }

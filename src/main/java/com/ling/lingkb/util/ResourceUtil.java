@@ -1,21 +1,8 @@
 package com.ling.lingkb.util;
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/27
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/27       spt
- * ------------------------------------------------------------------
- */
 
+import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.corpus.io.IOUtil;
+import java.io.File;
 
 /**
  * @author shipotian
@@ -30,5 +17,12 @@ public class ResourceUtil {
         } else {
             return "";
         }
+    }
+
+    public static String getModelPath(String fileName) {
+        String dependencyModelPath = HanLP.Config.PerceptronParserModelPath;
+        File modelFile = new File(dependencyModelPath);
+        File modelDir = modelFile.getParentFile().getParentFile();
+        return modelDir.getAbsolutePath().concat(File.separator).concat(fileName);
     }
 }
