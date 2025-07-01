@@ -2,6 +2,7 @@ package com.ling.lingkb.data.processor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.hankcs.hanlp.dictionary.CoreSynonymDictionary;
 import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.llm.ModelTrainer;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * TODO Recode
  * Multilingual Text Optimizer
  * Handles both English and Chinese text for:
  * 1. Synonym replacement
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  * 3. Term unification
  * 4. Abbreviation expansion
  * <p>
- * You can implement custom term rules by configuring the `/resource/term_mapping.json` file.
+ * You can implement custom term rules by configuring the `/resource/synonym_mapping.json` file.
  *
  * @author shipotian
  * @version 1.0.0
@@ -66,6 +66,8 @@ public class SynonymProcessor extends AbstractTextProcessor {
                 String replacement = termMapping.get(term);
                 text = patternCache.get(term).matcher(text).replaceAll(replacement);
             }
+
+            text = CoreSynonymDictionary.rewrite(text);
         }
 
         return text;

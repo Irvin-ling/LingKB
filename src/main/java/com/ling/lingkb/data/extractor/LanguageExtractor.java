@@ -27,6 +27,8 @@ import org.springframework.stereotype.Component;
  * These operations lay the foundation for enhancing text comprehension by large language models
  * through structured feature engineering and context enrichment.
  *
+ * You can implement custom classifier rules by configuring the `/resource/classifier_data.json` file.
+ *
  * @author shipotian
  * @version 1.0.0
  * @since 2023-06-24

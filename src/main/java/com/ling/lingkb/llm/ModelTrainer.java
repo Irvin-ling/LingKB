@@ -12,7 +12,6 @@ import edu.stanford.nlp.classify.LinearClassifierFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -32,13 +31,12 @@ public class ModelTrainer implements CommandLineRunner {
     public static final IClassifier CLASSIFIER_ZH = new NaiveBayesClassifier();
     public static LinearClassifier<String, String> CLASSIFIER_EN;
 
-    // TODO Recode
     @Override
     public void run(String... args) throws Exception {
-        synonymMappings = trainSynonym(ResourceUtil.getResource("term_mapping.json"));
+        synonymMappings = getSynonymCorpus();
 
         if (lang == Language.ZH) {
-            Map<String, String[]> classifierModel = trainClassifier(ResourceUtil.getResource("classifier_data.json"));
+            Map<String, String[]> classifierModel = getClassifierCorpus();
             CLASSIFIER_ZH.train(classifierModel);
         } else {
             CLASSIFIER_EN = LinearClassifierFactory.loadFromFilename("classifier_data.json");
@@ -48,12 +46,12 @@ public class ModelTrainer implements CommandLineRunner {
     public void reTrain(ModelType modelType, String modelData) throws IOException {
         switch (modelType) {
             case SYNONYM: {
-                synonymMappings = trainSynonym(modelData);
+                synonymMappings = getSynonymCorpus(modelData);
                 break;
             }
             case CLASSIFIER: {
                 if (lang == Language.ZH) {
-                    Map<String, String[]> classifierModel = trainClassifier(modelData);
+                    Map<String, String[]> classifierModel = getClassifierCorpus(modelData);
                     CLASSIFIER_ZH.train(classifierModel);
                 } else {
                     File tempFile = File.createTempFile("temp", ".json");
@@ -67,15 +65,21 @@ public class ModelTrainer implements CommandLineRunner {
         }
     }
 
-    private Set<String> trainStopWord(String modelData) {
-        return Set.of(modelData.split("\n"));
+    private JSONObject getSynonymCorpus() {
+        String corpus = ResourceUtil.getResource("term_mapping.json");
+        return getSynonymCorpus(corpus);
     }
 
-    private JSONObject trainSynonym(String modelData) {
+    private JSONObject getSynonymCorpus(String modelData) {
         return JSON.parseObject(modelData);
     }
 
-    private Map<String, String[]> trainClassifier(String modelData) {
+    private Map<String, String[]> getClassifierCorpus() {
+        String corpus = ResourceUtil.getResource("classifier_data.json");
+        return getClassifierCorpus(corpus);
+    }
+
+    private Map<String, String[]> getClassifierCorpus(String modelData) {
         return JSON.parseObject(modelData, new TypeReference<>() {
         });
     }
