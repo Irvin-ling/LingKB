@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import javax.imageio.ImageIO;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
  * @version 1.0.0
  */
 @Data
+@Slf4j
 @Component
 @ConfigurationProperties(prefix = "data.parser.image")
 public class ImageParser implements DocumentParser {
@@ -51,6 +53,7 @@ public class ImageParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("ImageParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
 

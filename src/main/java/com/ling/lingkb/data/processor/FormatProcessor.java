@@ -168,8 +168,8 @@ public class FormatProcessor extends AbstractTextProcessor {
         // Basic LaTeX command conversion
         text = text.replaceAll("\\\\frac\\{(.*?)\\}\\{(.*?)\\}", "$1/$2");
         text = text.replaceAll("\\\\sqrt\\{(.*?)\\}", "sqrt($1)");
-        text = text.replaceAll("\\\\sum\\s*_{(.*?)}^{(.*?)}", "sum from $1 to $2");
-        text = text.replaceAll("\\\\int\\s*_{(.*?)}^{(.*?)}", "integral from $1 to $2");
+        text = text.replaceAll("\\\\sum\\s*_\\{(.*?)\\}\\\\^\\{(.*?)\\}", "sum from $1 to $2");
+        text = text.replaceAll("\\\\int\\s*_\\{(.*?)\\}\\\\^\\{(.*?)\\}", "integral from $1 to $2");
 
         return text;
     }

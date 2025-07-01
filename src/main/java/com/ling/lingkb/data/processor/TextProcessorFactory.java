@@ -23,31 +23,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class TextProcessorFactory {
 
-    private PrimaryProcessor primaryProcessor;
-    private LanguageProcessor languageProcessor;
-    private SynonymProcessor synonymProcessor;
-    private NoiseProcessor noiseProcessor;
-    private StructureProcessor structureProcessor;
-    private FormatProcessor formatProcessor;
+    private TextProcessor textProcessor;
 
     @Autowired
     public TextProcessorFactory(PrimaryProcessor primaryProcessor, LanguageProcessor languageProcessor,
                                 SynonymProcessor synonymProcessor, NoiseProcessor noiseProcessor,
                                 StructureProcessor structureProcessor, FormatProcessor formatProcessor) {
-        this.primaryProcessor = primaryProcessor;
-        this.languageProcessor = languageProcessor;
-        this.synonymProcessor = synonymProcessor;
-        this.noiseProcessor = noiseProcessor;
-        this.structureProcessor = structureProcessor;
-        this.formatProcessor = formatProcessor;
+        textProcessor = primaryProcessor.setNext(languageProcessor).setNext(synonymProcessor).setNext(noiseProcessor)
+                .setNext(structureProcessor).setNext(formatProcessor);
     }
 
     @CodeHint
     public TextProcessResult process(DocumentParseResult parseResult) {
         TextProcessResult textProcessResult = new TextProcessResult(parseResult);
-        TextProcessor textProcessor =
-                primaryProcessor.setNext(languageProcessor).setNext(synonymProcessor).setNext(noiseProcessor)
-                        .setNext(structureProcessor).setNext(formatProcessor);
         String processedText = textProcessor.process(textProcessResult.getText());
         textProcessResult.setProcessedText(processedText);
         log.debug("Successfully completed the processing phase of text.");

@@ -1,10 +1,9 @@
 package com.ling.lingkb.data.extractor;
 
-import com.hankcs.hanlp.mining.word2vec.DocVectorModel;
-import com.hankcs.hanlp.mining.word2vec.WordVectorModel;
 import com.ling.lingkb.entity.FeatureExtractResult;
+import com.ling.lingkb.entity.Language;
+import com.ling.lingkb.util.language.LanguageUtil;
 import java.io.IOException;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +34,7 @@ public class VectorExtractor extends AbstractFeatureExtractor {
     void doExtract(FeatureExtractResult input) throws IOException {
         log.info("VectorExtractor.doExtract()...");
         if (enable) {
-
+            LanguageUtil.vector(input);
         }
     }
 

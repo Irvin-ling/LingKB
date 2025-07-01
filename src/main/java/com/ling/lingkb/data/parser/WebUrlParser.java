@@ -31,6 +31,7 @@ public class WebUrlParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(String url) throws DocumentParseException {
+        log.info("WebUrlParser.parse({})...", url);
         if (url == null || url.trim().isEmpty()) {
             throw new DocumentParseException("URL cannot be null or empty");
         }

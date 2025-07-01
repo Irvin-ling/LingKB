@@ -1,29 +1,19 @@
 package com.ling.lingkb.api;
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/25
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/25       spt
- * ------------------------------------------------------------------
- */
 
+import com.ling.lingkb.data.extractor.FeatureExtractorFactory;
 import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.entity.DocumentParseResult;
+import com.ling.lingkb.entity.FeatureExtractResult;
 import com.ling.lingkb.entity.TextProcessResult;
 import com.ling.lingkb.data.parser.DocumentParserFactory;
 import com.ling.lingkb.data.processor.TextProcessorFactory;
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,11 +27,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class DataController {
     private DocumentParserFactory parserFactory;
     private TextProcessorFactory processorFactory;
+    private FeatureExtractorFactory extractorFactory;
 
     @Autowired
-    public DataController(DocumentParserFactory parserFactory, TextProcessorFactory processorFactory) {
+    public DataController(DocumentParserFactory parserFactory, TextProcessorFactory processorFactory, FeatureExtractorFactory extractorFactory) {
         this.parserFactory = parserFactory;
         this.processorFactory = processorFactory;
+        this.extractorFactory = extractorFactory;
+    }
+
+    @PostMapping("/txt")
+    public List<FeatureExtractResult> txt(@RequestBody String txt) throws IOException {
+        File file = File.createTempFile("temp", "txt");
+        FileUtils.writeStringToFile(file, txt, "utf-8");
+        List<DocumentParseResult> documentParseResults = parserFactory.batchParse(file);
+        List<TextProcessResult> textProcessResults = processorFactory.batchProcess(documentParseResults);
+        List<FeatureExtractResult> featureExtractResults = extractorFactory.batchExtract(textProcessResults);
+        file.deleteOnExit();
+        return featureExtractResults;
     }
 
     @CodeHint(value = "backend logic main entry")

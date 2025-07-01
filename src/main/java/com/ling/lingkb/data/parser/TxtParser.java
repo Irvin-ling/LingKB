@@ -32,6 +32,7 @@ public class TxtParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("TxtParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
 
@@ -55,7 +56,8 @@ public class TxtParser implements DocumentParser {
 
             result.setText(textBuilder.toString());
             result.setMetadata(DocumentParseResult.DocumentMetadata.builder().author("Unknown").sourceFileName(fileName)
-                    .creationDate(Files.getLastModifiedTime(filePath).toMillis()).pageCount(lineCount).build());
+                    .creationDate(Files.getLastModifiedTime(filePath).toMillis()).pageCount(
+                            (int) Math.ceil(lineCount/100)).build());
 
         } catch (IOException e) {
             throw new DocumentParseException("Failed to parse text file: " + fileName, e);

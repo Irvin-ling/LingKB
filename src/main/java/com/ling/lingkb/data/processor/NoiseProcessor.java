@@ -145,7 +145,8 @@ public class NoiseProcessor extends AbstractTextProcessor {
     private static String replaceKeywords(String text, List<String> keywords) {
         for (String keyword : keywords) {
             // To avoid partial matching, add boundary conditions (full-width spaces for Chinese, half-width spaces for English)
-            String pattern = "(?<![\\w\\p{Han}])" + keyword + "(?![\\w\\p{Han}])";
+            String hanChars = "\\u4E00-\\u9FFF";
+            String pattern = "(?<![\\w" + hanChars + "])" + keyword + "(?![\\w" + hanChars + "])";
             text = text.replaceAll(pattern, "");
         }
         return text;

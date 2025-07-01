@@ -3,9 +3,11 @@ package com.ling.lingkb.data.extractor;
 import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.entity.FeatureExtractResult;
 import com.ling.lingkb.entity.TextProcessResult;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,20 +31,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class FeatureExtractorFactory {
 
-    private LanguageExtractor languageExtractor;
+    private FeatureExtractor featureExtractor;
 
+    @Autowired
+    public FeatureExtractorFactory(LanguageExtractor languageExtractor, SemanticExtractor semanticExtractor,
+                                   VectorExtractor vectorExtractor) {
+        this.featureExtractor = languageExtractor.setNext(semanticExtractor).setNext(vectorExtractor);
+    }
 
     @CodeHint
-    public FeatureExtractResult extract(TextProcessResult processResult) {
+    public FeatureExtractResult extract(TextProcessResult processResult) throws IOException {
         FeatureExtractResult featureExtractResult = new FeatureExtractResult(processResult);
-        FeatureExtractor featureExtractor = languageExtractor;
         featureExtractor.extract(featureExtractResult);
         log.debug("Successfully completed the extracting phase of text.");
         return featureExtractResult;
     }
 
     @CodeHint
-    public List<TextProcessResult> batchProcess(List<TextProcessResult> processResults) {
-        return processResults.stream().map(this::extract).collect(Collectors.toList());
+    public List<FeatureExtractResult> batchExtract(List<TextProcessResult> processResults) throws IOException {
+        List<FeatureExtractResult> list = new ArrayList<>();
+        for (TextProcessResult processResult : processResults) {
+            FeatureExtractResult extractResult = extract(processResult);
+            list.add(extractResult);
+        }
+        return list;
     }
 }

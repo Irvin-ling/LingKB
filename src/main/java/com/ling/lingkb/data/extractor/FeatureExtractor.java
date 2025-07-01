@@ -2,6 +2,7 @@ package com.ling.lingkb.data.extractor;
 
 
 import com.ling.lingkb.entity.FeatureExtractResult;
+import java.io.IOException;
 
 /**
  * The {@code FeatureExtractor} interface defines a contract for components that participate in
@@ -25,8 +26,9 @@ public interface FeatureExtractor {
      *
      * @param input the result object to both read input text from and write extracted features to.
      *              Must not be null and should have preprocessed text content available.
+     * @throws IOException Sometimes IOException is thrown during the feature extractor stage
      */
-    void extract(FeatureExtractResult input);
+    void extract(FeatureExtractResult input) throws IOException;
 
     /**
      * Sets the next {@code FeatureExtractor} in the processing pipeline. This enables constructing a sequence

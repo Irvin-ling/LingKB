@@ -124,7 +124,7 @@ public class PrimaryProcessor extends AbstractTextProcessor {
 
         // Attempt to convert from every possible source encoding to the target encoding
         for (Charset sourceCharset : commonCharsets) {
-            log.info("Encoding fix, currently attempting {}:", sourceCharset);
+            log.debug("Encoding fix, currently attempting {}:", sourceCharset);
             try {
                 // Simulate error encoding process: First obtain the bytes of the source encoding, and then interpret the error encoding
                 byte[] originalBytes = text.getBytes(sourceCharset);

@@ -35,6 +35,7 @@ public class PdfParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("PdfParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
 

@@ -84,6 +84,7 @@ public class ConfluenceTreeParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(String rootUrl) throws DocumentParseException {
+        log.info("ConfluenceTreeParser.parse({})...", rootUrl);
         visitedUrls.clear();
         init(rootUrl);
         DocumentParseResult result = new DocumentParseResult();

@@ -13,8 +13,12 @@ public abstract class AbstractTextProcessor implements TextProcessor {
 
     @Override
     public TextProcessor setNext(TextProcessor next) {
-        this.next = next;
-        return next;
+        if (this.next == null) {
+            this.next = next;
+        } else {
+            this.next.setNext(next);
+        }
+        return this;
     }
 
     @Override

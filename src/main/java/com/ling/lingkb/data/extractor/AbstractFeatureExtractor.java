@@ -15,12 +15,16 @@ public abstract class AbstractFeatureExtractor implements FeatureExtractor {
 
     @Override
     public FeatureExtractor setNext(FeatureExtractor next) {
-        this.next = next;
-        return next;
+        if (this.next == null) {
+            this.next = next;
+        } else {
+            this.next.setNext(next);
+        }
+        return this;
     }
 
     @Override
-    public void extract(FeatureExtractResult input) {
+    public void extract(FeatureExtractResult input) throws IOException {
         if (input != null && StringUtils.isNotBlank(input.getProcessedText())) {
             doExtract(input);
             if (next != null) {
@@ -33,6 +37,7 @@ public abstract class AbstractFeatureExtractor implements FeatureExtractor {
      * Execute the core processing flow for feature extracting
      *
      * @param input the result object to both read input text from and write extracted features to.
+     * @throws IOException Sometimes IOException is thrown
      */
     abstract void doExtract(FeatureExtractResult input) throws IOException;
 }

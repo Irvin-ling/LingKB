@@ -39,6 +39,7 @@ public class PptxParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("PptxParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
 

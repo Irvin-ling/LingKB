@@ -36,6 +36,7 @@ public class WordParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("WordParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
 

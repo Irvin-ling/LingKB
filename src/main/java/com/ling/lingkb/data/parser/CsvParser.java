@@ -36,6 +36,7 @@ public class CsvParser implements DocumentParser {
 
     @Override
     public DocumentParseResult parse(Path filePath) throws DocumentParseException {
+        log.info("CsvParser.parse({})...", filePath);
         String fileName = filePath.getFileName().toString();
         DocumentParseResult result = new DocumentParseResult();
         AtomicLong rowCounter = new AtomicLong(0);

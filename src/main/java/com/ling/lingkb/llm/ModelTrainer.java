@@ -65,8 +65,8 @@ public class ModelTrainer implements CommandLineRunner {
         }
     }
 
-    private JSONObject getSynonymCorpus() {
-        String corpus = ResourceUtil.getResource("term_mapping.json");
+    private JSONObject getSynonymCorpus() throws IOException {
+        String corpus = ResourceUtil.getResource("synonym_mapping.json");
         return getSynonymCorpus(corpus);
     }
 
@@ -74,7 +74,7 @@ public class ModelTrainer implements CommandLineRunner {
         return JSON.parseObject(modelData);
     }
 
-    private Map<String, String[]> getClassifierCorpus() {
+    private Map<String, String[]> getClassifierCorpus() throws IOException {
         String corpus = ResourceUtil.getResource("classifier_data.json");
         return getClassifierCorpus(corpus);
     }
