@@ -1,4 +1,4 @@
-package com.ling.lingkb.api;
+package com.ling.lingkb.controller;
 
 import com.ling.lingkb.data.extractor.FeatureExtractorFactory;
 import com.ling.lingkb.entity.CodeHint;

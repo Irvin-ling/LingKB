@@ -102,6 +102,11 @@
             <artifactId>language-en</artifactId>
             <version>5.8</version>
         </dependency>
+        <dependency>
+            <groupId>io.qdrant</groupId>
+            <artifactId>client</artifactId>
+            <version>1.14.1</version>
+        </dependency>
         <!--common tools-->
         <dependency>
             <groupId>org.apache.tika</groupId>
@@ -137,7 +142,6 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot打包插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

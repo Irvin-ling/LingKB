@@ -1,4 +1,4 @@
-package com.ling.lingkb.api;
+package com.ling.lingkb.controller;
 /*
  * ------------------------------------------------------------------
  * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
