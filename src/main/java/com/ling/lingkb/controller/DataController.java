@@ -1,5 +1,8 @@
 package com.ling.lingkb.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.ling.lingkb.data.extractor.FeatureExtractorFactory;
 import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.entity.DocumentParseResult;
@@ -12,6 +15,7 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/ling")
+@CrossOrigin(origins = {"http://127.0.0.1:8080", "http://localhost:8080"}, allowCredentials = "true")
 public class DataController {
     private DocumentParserFactory parserFactory;
     private TextProcessorFactory processorFactory;
@@ -36,7 +41,13 @@ public class DataController {
         this.extractorFactory = extractorFactory;
     }
 
-    @PostMapping("/txt")
+    @PostMapping("/dialog")
+    public JSONObject dialog(@RequestBody String json) throws IOException {
+        JSONArray messageArray = JSON.parseObject(json).getJSONArray("messages");
+        return messageArray.getJSONObject(messageArray.size() - 1);
+    }
+
+    @PostMapping("/test")
     public List<FeatureExtractResult> txt(@RequestBody String txt) throws IOException {
         File file = File.createTempFile("temp", "txt");
         FileUtils.writeStringToFile(file, txt, "utf-8");
