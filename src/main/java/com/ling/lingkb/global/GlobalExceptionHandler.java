@@ -1,21 +1,5 @@
 package com.ling.lingkb.global;
 
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/19
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/19       spt
- * ------------------------------------------------------------------
- */
-
 import com.ling.lingkb.entity.Reply;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

@@ -1,67 +1,69 @@
 package com.ling.lingkb.controller;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
-import com.ling.lingkb.data.extractor.FeatureExtractorFactory;
-import com.ling.lingkb.entity.CodeHint;
-import com.ling.lingkb.entity.DocumentParseResult;
-import com.ling.lingkb.entity.FeatureExtractResult;
-import com.ling.lingkb.entity.TextProcessResult;
-import com.ling.lingkb.data.parser.DocumentParserFactory;
-import com.ling.lingkb.data.processor.TextProcessorFactory;
-import java.io.File;
+import com.ling.lingkb.entity.Reply;
+import com.ling.lingkb.llm.data.DataFeeder;
 import java.io.IOException;
-import java.util.List;
-import org.apache.commons.io.FileUtils;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
+ * Knowledge Base Data Backend: Feeding Data
+ *
  * @author shipotian
  * @version 1.0.0
- * @since 2025/6/25
+ * @since 2025/6/30
  */
+@Slf4j
 @RestController
-@RequestMapping("/ling")
-@CrossOrigin(origins = {"http://127.0.0.1:8080", "http://localhost:8080"}, allowCredentials = "true")
+@RequestMapping("/data")
 public class DataController {
-    private DocumentParserFactory parserFactory;
-    private TextProcessorFactory processorFactory;
-    private FeatureExtractorFactory extractorFactory;
+    @Value("${system.upload.file.dir}")
+    private String uploadFileDir;
+
+    private DataFeeder dataFeeder;
 
     @Autowired
-    public DataController(DocumentParserFactory parserFactory, TextProcessorFactory processorFactory, FeatureExtractorFactory extractorFactory) {
-        this.parserFactory = parserFactory;
-        this.processorFactory = processorFactory;
-        this.extractorFactory = extractorFactory;
+    public DataController(DataFeeder dataFeeder) {
+        this.dataFeeder = dataFeeder;
     }
 
-    @PostMapping("/dialog")
-    public JSONObject dialog(@RequestBody String json) throws IOException {
-        JSONArray messageArray = JSON.parseObject(json).getJSONArray("messages");
-        return messageArray.getJSONObject(messageArray.size() - 1);
+    @PostMapping("/upload")
+    public Reply uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
+
+        if (file.isEmpty()) {
+            return Reply.failure("Upload failed, please select a file");
+        }
+
+        String fileId = dataFeeder.createFileId();
+        String fileName = fileId + "_" + file.getOriginalFilename();
+        Path filePath = Paths.get(uploadFileDir).resolve(fileName);
+        try {
+            file.transferTo(filePath);
+        } catch (IOException e) {
+            log.error("Upload failed:", e);
+            return Reply.failure(e.getMessage());
+        }
+        dataFeeder.feed(fileId, filePath);
+        return Reply.success(fileId);
     }
 
-    @PostMapping("/test")
-    public List<FeatureExtractResult> txt(@RequestBody String txt) throws IOException {
-        File file = File.createTempFile("temp", "txt");
-        FileUtils.writeStringToFile(file, txt, "utf-8");
-        List<DocumentParseResult> documentParseResults = parserFactory.batchParse(file);
-        List<TextProcessResult> textProcessResults = processorFactory.batchProcess(documentParseResults);
-        List<FeatureExtractResult> featureExtractResults = extractorFactory.batchExtract(textProcessResults);
-        file.deleteOnExit();
-        return featureExtractResults;
+    @GetMapping("/read")
+    public Reply readFile(@RequestParam String fileId) {
+        String text = dataFeeder.getFileText(fileId);
+        if (StringUtils.isBlank(text)) {
+            return Reply.failure("The file does not exist or is being parsed. Please try again later.");
+        }
+        return Reply.success(text);
     }
 
-    @CodeHint(value = "backend logic main entry")
-    private void dataImport(File file) {
-        List<DocumentParseResult> documentParseResults = parserFactory.batchParse(file);
-        List<TextProcessResult> textProcessResults = processorFactory.batchProcess(documentParseResults);
-        System.out.println(textProcessResults.size());
-    }
 }

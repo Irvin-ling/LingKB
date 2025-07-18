@@ -1,19 +1,4 @@
 package com.ling.lingkb.entity;
-/*
- * ------------------------------------------------------------------
- * Copyright @ 2025 Hangzhou Ling Technology Co.,Ltd. All rights reserved.
- * ------------------------------------------------------------------
- * Product: LingKB
- * Module Name: LingKB
- * Date Created: 2025/6/25
- * Description:
- * ------------------------------------------------------------------
- * Modification History
- * DATE            Name           Description
- * ------------------------------------------------------------------
- * 2025/6/25       spt
- * ------------------------------------------------------------------
- */
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
