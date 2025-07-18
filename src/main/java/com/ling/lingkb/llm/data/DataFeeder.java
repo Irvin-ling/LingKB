@@ -7,11 +7,11 @@ import com.ling.lingkb.llm.data.parser.DocumentParserFactory;
 import com.ling.lingkb.llm.data.processor.TextProcessorFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -46,23 +46,23 @@ public class DataFeeder {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
-    @Async
     public void feed(String fileId, Path filePath) throws Exception {
         LingDocument lingDocument = parserFactory.parse(filePath.toFile());
         lingDocument = processorFactory.process(lingDocument);
         lingDocument = languageExtractor.doExtract(lingDocument);
         lingDocument.setFileId(fileId);
         lingDocument.setWorkspace(workspace);
+        lingDocument.setSize(Files.size(filePath));
         Files.deleteIfExists(filePath);
         soleMapper.saveDocument(lingDocument);
-        dataFeedDao.feed(lingDocument);
+        //dataFeedDao.feed(lingDocument);
     }
 
-    public String getFileText(String fileId) {
-        LingDocument lingDocument = soleMapper.queryDocumentByFileId(fileId);
-        if (lingDocument == null) {
-            return null;
-        }
-        return lingDocument.getText();
+    public List<LingDocument> getFileIdList() {
+        return soleMapper.queryMajorByWorkspace(workspace);
+    }
+
+    public LingDocument getDocument(String fileId) {
+        return soleMapper.queryDocumentByFileId(fileId);
     }
 }

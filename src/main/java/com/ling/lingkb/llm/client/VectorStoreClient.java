@@ -146,16 +146,15 @@ public class VectorStoreClient {
         }
     }
 
-    public void addVectors(List<String> texts, List<float[]> vectors) {
+    public void addVectors(String fileId, List<String> texts, List<float[]> vectors) {
         lock.writeLock().lock();
         try {
             List<LingVector> vectorList = new ArrayList<>();
             for (int i = 0; i < texts.size(); i++) {
                 String text = texts.get(i);
                 float[] vector = vectors.get(i);
-                LingVector lingVector =
-                        LingVector.builder().workspace(workspace).txt(text).vector(floatsToString(vector))
-                                .persisted(false).build();
+                LingVector lingVector = LingVector.builder().workspace(workspace).fileId(fileId).txt(text)
+                        .vector(floatsToString(vector)).persisted(false).build();
                 vectorList.add(lingVector);
             }
             soleMapper.batchSaveVectors(vectorList);

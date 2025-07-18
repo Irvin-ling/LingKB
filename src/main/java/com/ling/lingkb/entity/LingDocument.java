@@ -19,6 +19,7 @@ public class LingDocument {
     private String fileId;
     private String workspace;
     private String author;
+    private long size;
     private String sourceFileName;
     private long creationDate;
     private int pageCount;

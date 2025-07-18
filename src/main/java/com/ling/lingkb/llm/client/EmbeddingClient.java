@@ -73,7 +73,7 @@ public class EmbeddingClient {
         return embeddingArr;
     }
 
-    public List<float[]> getEmbedding(List<String> textList) {
+    public List<float[]> getEmbeddings(List<String> textList) {
         log.info("convert to vector：{}", String.join("+", textList));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 public class NoiseProcessor extends AbstractTextProcessor {
     @Value("${data.processor.noise.enable}")
     private boolean dataNoiseEnable;
+    @Value("${data.processor.noise.desensitize}")
+    private boolean dataNoiseDesensitize;
     @Value("${data.processor.noise.duplicate.threshold}")
     private double dataNoiseDuplicateThreshold;
     @Value("${data.processor.noise.min.length}")
@@ -72,7 +74,10 @@ public class NoiseProcessor extends AbstractTextProcessor {
             text = filterDuplicateText(text);
             // 3. Advertising/spam recognition and filtering
             text = filterSpamContent(text);
-            text = desensitizeSensitiveInfo(text);
+            // 4. Desensitize
+            if (dataNoiseDesensitize) {
+                text = desensitizeSensitiveInfo(text);
+            }
         }
         return text;
     }

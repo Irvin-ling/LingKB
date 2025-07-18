@@ -1,15 +1,19 @@
 package com.ling.lingkb.controller;
 
+import com.ling.lingkb.entity.LingDocument;
 import com.ling.lingkb.entity.Reply;
 import com.ling.lingkb.llm.data.DataFeeder;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequestMapping("/data")
+@CrossOrigin(origins = {"http://127.0.0.1:8080", "http://localhost:8080"}, allowCredentials = "true") // TODO to remove
 public class DataController {
     @Value("${system.upload.file.dir}")
     private String uploadFileDir;
@@ -57,13 +62,19 @@ public class DataController {
         return Reply.success(fileId);
     }
 
-    @GetMapping("/read")
-    public Reply readFile(@RequestParam String fileId) {
-        String text = dataFeeder.getFileText(fileId);
-        if (StringUtils.isBlank(text)) {
+    @GetMapping("/files")
+    public Reply files() {
+        List<LingDocument> fileIds = dataFeeder.getFileIdList();
+        return Reply.success(fileIds);
+    }
+
+    @GetMapping("/files/{fileId}")
+    public Reply file(@PathVariable String fileId) {
+        LingDocument document = dataFeeder.getDocument(fileId);
+        if (document == null) {
             return Reply.failure("The file does not exist or is being parsed. Please try again later.");
         }
-        return Reply.success(text);
+        return Reply.success(dataFeeder.getDocument(fileId));
     }
 
 }

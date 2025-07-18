@@ -31,8 +31,7 @@ public class DataFeedDao {
     private SoleMapper soleMapper;
 
     @Autowired
-    public DataFeedDao(EmbeddingClient embeddingClient,
-                       VectorStoreClient vectorStoreClient) {
+    public DataFeedDao(EmbeddingClient embeddingClient, VectorStoreClient vectorStoreClient) {
         this.embeddingClient = embeddingClient;
         this.vectorStoreClient = vectorStoreClient;
     }
@@ -40,11 +39,11 @@ public class DataFeedDao {
 
     @Async
     public void feed(LingDocument lingDocument) {
-        List<String> sentences = SentencesUtil.toSentenceList(lingDocument.getText());
+        List<String> sentences = SentencesUtil.toSentenceList(lingDocument.getText(), false);
         List<List<String>> sentenceChunks = splitIntoChunks(sentences);
         for (List<String> sentenceChunk : sentenceChunks) {
-            List<float[]> embeddingList = embeddingClient.getEmbedding(sentenceChunk);
-            vectorStoreClient.addVectors(sentenceChunk, embeddingList);
+            List<float[]> embeddingList = embeddingClient.getEmbeddings(sentenceChunk);
+            vectorStoreClient.addVectors(lingDocument.getFileId(), sentenceChunk, embeddingList);
         }
     }
 

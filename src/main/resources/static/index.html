@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识库管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+    <!-- Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        danger: '#F53F3F',
+                        info: '#86909C',
+                        light: '#F2F3F5',
+                        dark: '#1D2129',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+
+            .transition-custom {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark">
+<div class="flex h-screen overflow-hidden">
+    <!-- 侧边栏 -->
+    <aside class="w-64 bg-white shadow-lg hidden md:block transition-all duration-300 ease-in-out">
+        <div class="flex items-center justify-between h-16 px-4 border-b">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-book text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">Ling知识库管理系统</h1>
+            </div>
+            <button class="md:hidden text-gray-500 hover:text-primary">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+
+        <nav class="p-4">
+            <ul class="space-y-1">
+                <li>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg bg-primary/10 text-primary">
+                        <i class="fa fa-home w-5 h-5 mr-3"></i>
+                        <span>仪表盘</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                       class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-file-text-o w-5 h-5 mr-3"></i>
+                        <span>文档管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                       class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-tags w-5 h-5 mr-3"></i>
+                        <span>标签管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                       class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-users w-5 h-5 mr-3"></i>
+                        <span>用户管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#"
+                       class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-cog w-5 h-5 mr-3"></i>
+                        <span>系统设置</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- 顶部导航 -->
+        <header class="bg-white shadow-sm z-10">
+            <div class="flex items-center justify-between h-16 px-4">
+                <div class="flex items-center">
+                    <button class="mr-2 text-gray-500 md:hidden" id="sidebar-toggle">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                    <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <i class="fa fa-search text-gray-400"></i>
+              </span>
+                        <input type="text" placeholder="搜索文档..."
+                               class="pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-bell"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-danger rounded-full"></span>
+                    </button>
+                    <button class="relative p-2 text-gray-500 hover:text-primary rounded-full hover:bg-gray-100 transition-custom">
+                        <i class="fa fa-envelope"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <img src="https://picsum.photos/id/1005/200/200" alt="用户头像"
+                             class="w-8 h-8 rounded-full object-cover">
+                        <span class="hidden md:inline-block">管理员</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <main class="flex-1 overflow-y-auto p-4 bg-gray-50">
+            <div class="max-w-7xl mx-auto">
+                <!-- 页面标题 -->
+                <div class="mb-6">
+                    <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">文档管理</h2>
+                    <p class="text-gray-600">上传和管理知识库文档</p>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform hover:scale-[1.02] transition-custom">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">文档总数</p>
+                                <h3 class="text-2xl font-bold mt-1" id="total-docs">0</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <i class="fa fa-file-text-o text-primary text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                <span class="text-success flex items-center">
+                  <i class="fa fa-arrow-up mr-1"></i> 12%
+                </span>
+                            <span class="text-gray-500 ml-2">较上月</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform hover:scale-[1.02] transition-custom">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">本月新增</p>
+                                <h3 class="text-2xl font-bold mt-1" id="new-docs">0</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                                <i class="fa fa-plus text-secondary text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                <span class="text-success flex items-center">
+                  <i class="fa fa-arrow-up mr-1"></i> 8%
+                </span>
+                            <span class="text-gray-500 ml-2">较上月</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform hover:scale-[1.02] transition-custom">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">文档大小</p>
+                                <h3 class="text-2xl font-bold mt-1" id="total-size">0 MB</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+                                <i class="fa fa-database text-warning text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                <span class="text-danger flex items-center">
+                  <i class="fa fa-arrow-up mr-1"></i> 24%
+                </span>
+                            <span class="text-gray-500 ml-2">较上月</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform hover:scale-[1.02] transition-custom">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm">处理中</p>
+                                <h3 class="text-2xl font-bold mt-1" id="processing-docs">0</h3>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center">
+                                <i class="fa fa-spinner text-info text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-sm">
+                <span class="text-success flex items-center">
+                  <i class="fa fa-arrow-down mr-1"></i> 5%
+                </span>
+                            <span class="text-gray-500 ml-2">较上月</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文档上传区域 -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4">上传文档</h3>
+                    <div id="upload-container"
+                         class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-custom cursor-pointer">
+                        <i class="fa fa-cloud-upload text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-2">拖放文件到此处，或<span class="text-primary">点击上传</span></p>
+                        <p class="text-sm text-gray-500">支持格式：txt、word、pdf、ppt、excel、csv、图片</p>
+                        <input type="file" id="file-upload" class="hidden" multiple
+                               accept=".txt,.docx,.doc,.pdf,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.gif">
+                    </div>
+
+                    <!-- 上传进度条 -->
+                    <div id="upload-progress-container" class="mt-4 hidden">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-medium text-gray-700" id="upload-file-name">上传中...</span>
+                            <span class="text-sm text-gray-500" id="upload-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="upload-progress-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 上传成功消息 -->
+                    <div id="upload-success" class="mt-4 hidden">
+                        <div class="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-center">
+                            <i class="fa fa-check-circle mr-3"></i>
+                            <div>
+                                <p class="font-medium">上传成功</p>
+                                <p class="text-sm">文件ID: <span id="uploaded-file-id"></span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 上传失败消息 -->
+                    <div id="upload-error" class="mt-4 hidden">
+                        <div class="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-lg flex items-center">
+                            <i class="fa fa-exclamation-circle mr-3"></i>
+                            <p class="font-medium">上传失败，请重试</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文档列表 -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                        <h3 class="text-lg font-semibold">文档列表</h3>
+                        <div class="flex items-center space-x-2 mt-4 md:mt-0">
+                            <div class="relative">
+                                <select class="pl-3 pr-10 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white appearance-none">
+                                    <option>全部类型</option>
+                                    <option>文本文件</option>
+                                    <option>演示文档</option>
+                                    <option>电子表格</option>
+                                    <option>图片</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                    <i class="fa fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                            <div class="relative">
+                                <select class="pl-3 pr-10 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white appearance-none">
+                                    <option>最近上传</option>
+                                    <option>名称排序</option>
+                                    <option>大小排序</option>
+                                    <option>类型排序</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                    <i class="fa fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 表格 -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                            <tr>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件ID
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    文件名
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    类型
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    大小
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    上传日期
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    关键字
+                                </th>
+                                <th class="px-4 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    操作
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="documents-table-body">
+                            <!-- 表格内容将通过JavaScript动态生成 -->
+                            <tr class="text-center">
+                                <td colspan="7" class="px-4 py-8 text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <i class="fa fa-folder-open-o text-4xl mb-3 text-gray-300"></i>
+                                        <p>暂无文档，请上传文档</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    <div class="flex items-center justify-between px-4 py-3 sm:px-6 mt-4">
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    显示 <span class="font-medium">1</span> 到 <span class="font-medium">0</span> 条，共 <span
+                                        class="font-medium" id="total-docs-pagination">0</span> 条记录
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                     aria-label="Pagination">
+                                    <a href="#"
+                                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fa fa-chevron-left text-xs"></i>
+                                    </a>
+                                    <a href="#"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary text-sm font-medium text-white">
+                                        1
+                                    </a>
+                                    <a href="#"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        2
+                                    </a>
+                                    <a href="#"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        3
+                                    </a>
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                      ...
+                    </span>
+                                    <a href="#"
+                                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fa fa-chevron-right text-xs"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 文档详情模态框 -->
+<div id="document-detail-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center justify-between">
+                            <span>文档详情</span>
+                            <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                                    id="close-detail-modal">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </h3>
+
+                        <!-- 文档详情加载中状态 -->
+                        <div id="document-detail-loading" class="text-center py-16">
+                            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
+                            <p class="mt-3 text-gray-500">正在加载文档详情...</p>
+                        </div>
+
+                        <!-- 文档详情内容 -->
+                        <div id="document-detail-content" class="hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">文件ID</p>
+                                    <p class="font-medium" id="detail-file-id">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">工作区</p>
+                                    <p class="font-medium" id="detail-workspace">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">作者</p>
+                                    <p class="font-medium" id="detail-author">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">原始文件名</p>
+                                    <p class="font-medium" id="detail-filename">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">创建日期</p>
+                                    <p class="font-medium" id="detail-creation-date">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">页数</p>
+                                    <p class="font-medium" id="detail-page-count">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">字符数</p>
+                                    <p class="font-medium" id="detail-char-count">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">单词数</p>
+                                    <p class="font-medium" id="detail-word-count">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">句子数</p>
+                                    <p class="font-medium" id="detail-sentence-count">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">关键词</p>
+                                    <div class="flex flex-wrap gap-2" id="detail-keywords">
+                                        <!-- 关键词将动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p class="text-sm text-gray-500 mb-2">文本内容</p>
+                                <div id="detail-text"
+                                     class="bg-gray-50 p-4 rounded-lg h-64 overflow-y-auto scrollbar-hide text-gray-700">
+                                    <!-- 文本内容将动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文档详情加载失败状态 -->
+                        <div id="document-detail-error" class="text-center py-16 hidden">
+                            <i class="fa fa-exclamation-triangle text-4xl text-warning mb-3"></i>
+                            <p class="mt-3 text-gray-700">加载文档详情失败</p>
+                            <p class="mt-2 text-sm text-gray-500">服务器可能暂时不可用，请稍后再试</p>
+                            <button type="button"
+                                    class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                    id="retry-load-detail">
+                                重试
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm"
+                        id="close-detail-modal-btn">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE_URL = "http://127.0.0.1:8080";
+    // 侧边栏切换
+    document.getElementById('sidebar-toggle').addEventListener('click', function () {
+        const sidebar = document.querySelector('aside');
+        sidebar.classList.toggle('hidden');
+        sidebar.classList.toggle('fixed');
+        sidebar.classList.toggle('inset-y-0');
+        sidebar.classList.toggle('left-0');
+        sidebar.classList.toggle('z-50');
+    });
+
+    // 文件上传
+    const uploadContainer = document.getElementById('upload-container');
+    const fileUpload = document.getElementById('file-upload');
+    const uploadProgressContainer = document.getElementById('upload-progress-container');
+    const uploadProgressBar = document.getElementById('upload-progress-bar');
+    const uploadPercentage = document.getElementById('upload-percentage');
+    const uploadFileName = document.getElementById('upload-file-name');
+    const uploadSuccess = document.getElementById('upload-success');
+    const uploadError = document.getElementById('upload-error');
+    const uploadedFileId = document.getElementById('uploaded-file-id');
+
+    // 点击上传区域触发文件选择
+    uploadContainer.addEventListener('click', () => {
+        fileUpload.click();
+    });
+
+    // 拖放功能
+    uploadContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadContainer.classList.add('border-primary');
+        uploadContainer.classList.add('bg-primary/5');
+    });
+
+    uploadContainer.addEventListener('dragleave', () => {
+        uploadContainer.classList.remove('border-primary');
+        uploadContainer.classList.remove('bg-primary/5');
+    });
+
+    uploadContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadContainer.classList.remove('border-primary');
+        uploadContainer.classList.remove('bg-primary/5');
+
+        if (e.dataTransfer.files.length > 0) {
+            handleFiles(e.dataTransfer.files);
+        }
+    });
+
+    // 文件选择变化时处理
+    fileUpload.addEventListener('change', () => {
+        if (fileUpload.files.length > 0) {
+            handleFiles(fileUpload.files);
+        }
+    });
+
+    // 处理文件上传
+    function handleFiles(files) {
+        // 只处理第一个文件
+        const file = files[0];
+        if (!file) return;
+
+        // 显示上传进度
+        uploadProgressContainer.classList.remove('hidden');
+        uploadSuccess.classList.add('hidden');
+        uploadError.classList.add('hidden');
+
+        uploadFileName.textContent = file.name;
+
+        // 模拟上传进度
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 500;
+            if (progress > 100) {
+                progress = 100;
+                clearInterval(interval);
+
+                // 模拟上传完成，实际应替换为真实的API调用
+                setTimeout(() => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    fetch(API_BASE_URL + '/data/upload', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => response.json())
+                        .then(data => {
+                            // 处理成功响应
+                            uploadedFileId.textContent = data.data;
+                            uploadSuccess.classList.remove('hidden');
+                            uploadProgressContainer.classList.add('hidden');
+
+                            // 刷新文档列表
+                            fetchDocuments();
+                        })
+                        .catch(error => {
+                            // 处理错误
+                            uploadError.classList.remove('hidden');
+                            uploadProgressContainer.classList.add('hidden');
+                            console.error('上传失败:', error);
+                        });
+                    // 刷新文档列表
+                    fetchDocuments();
+                }, 800);
+            }
+
+            uploadProgressBar.style.width = `${progress}%`;
+            uploadPercentage.textContent = `${Math.round(progress)}%`;
+        }, 300);
+    }
+
+    // 文档列表相关
+    const documentsTableBody = document.getElementById('documents-table-body');
+    const totalDocs = document.getElementById('total-docs');
+    const newDocs = document.getElementById('new-docs');
+    const totalSize = document.getElementById('total-size');
+    const processingDocs = document.getElementById('processing-docs');
+    const totalDocsPagination = document.getElementById('total-docs-pagination');
+
+    // 获取文档列表
+    function fetchDocuments() {
+        // 实际项目中应使用以下代码进行真实的API调用
+        fetch(API_BASE_URL + '/data/files')
+            .then(response => response.json())
+            .then(data => {
+                renderDocuments(data.data);
+            })
+            .catch(error => {
+                console.error('获取文档列表失败:', error);
+            });
+    }
+
+    function getFileExtension(fileName) {
+        if (!fileName) return '';
+        const lastDotIndex = fileName.lastIndexOf('.');
+        return lastDotIndex === -1 ? '' : fileName.substring(lastDotIndex + 1);
+    }
+
+    function countSize(fileSize) {
+        if (fileSize === 0) return '0 B';
+
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(fileSize) / Math.log(1024));
+
+        return `${(fileSize / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
+    }
+
+    // 渲染文档列表
+    function renderDocuments(documents) {
+        if (documents.length === 0) {
+            documentsTableBody.innerHTML = `
+          <tr class="text-center">
+            <td colspan="7" class="px-4 py-8 text-gray-500">
+              <div class="flex flex-col items-center">
+                <i class="fa fa-folder-open-o text-4xl mb-3 text-gray-300"></i>
+                <p>暂无文档，请上传文档</p>
+              </div>
+            </td>
+          </tr>
+        `;
+            return;
+        }
+
+        let html = '';
+        documents.forEach(doc => {
+            const statusClass = doc.status === '已处理' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning';
+            const fileTypeIcon = getFileTypeIcon(doc.sourceFileName);
+
+            html += `
+          <tr class="hover:bg-gray-50 transition-custom">
+            <td class="px-4 py-4 whitespace-nowrap">
+              <span class="text-primary cursor-pointer hover:underline view-detail" data-id="${doc.fileId}">${doc.fileId}</span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center mr-3">
+                  ${fileTypeIcon}
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-gray-900">${doc.sourceFileName.replace(doc.fileId + "_", '')}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <span class="text-sm text-gray-900">${getFileExtension(doc.sourceFileName)}</span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <span class="text-sm text-gray-900">${countSize(doc.size)}</span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+              ${doc.creationDate}
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap">
+              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                ${doc.keywords}
+              </span>
+            </td>
+            <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button class="text-primary hover:text-primary/80 mr-3 view-detail" data-id="${doc.fileId}">
+                <i class="fa fa-eye"></i> 查看
+              </button>
+              <button class="text-gray-500 hover:text-gray-700">
+                <i class="fa fa-download"></i> 下载
+              </button>
+            </td>
+          </tr>
+        `;
+        });
+
+        documentsTableBody.innerHTML = html;
+
+        // 更新统计数据
+        totalDocs.textContent = documents.length;
+        newDocs.textContent = Math.floor(documents.length * 0.3);
+        totalDocsPagination.textContent = documents.length;
+
+        // 计算总大小
+        let totalSizeValue = 0;
+        documents.forEach(doc => {
+            totalSizeValue += doc.size;
+        });
+        totalSize.textContent = countSize(totalSizeValue);
+
+        // 计算处理中的文档数
+        const processing = documents.filter(doc => doc.status !== '已处理').length;
+        processingDocs.textContent = "已处理";
+
+        // 添加查看详情事件监听
+        document.querySelectorAll('.view-detail').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const fileId = btn.getAttribute('data-id');
+                openDocumentDetail(fileId);
+            });
+        });
+    }
+
+    // 根据文件类型获取图标
+    function getFileTypeIcon(type) {
+        type = type.toLowerCase();
+        if (type.includes('word') || type.includes('docx') || type.includes('doc')) {
+            return '<i class="fa fa-file-word-o text-blue-600"></i>';
+        } else if (type.includes('pdf')) {
+            return '<i class="fa fa-file-pdf-o text-red-600"></i>';
+        } else if (type.includes('excel') || type.includes('xlsx') || type.includes('xls')) {
+            return '<i class="fa fa-file-excel-o text-green-600"></i>';
+        } else if (type.includes('powerpoint') || type.includes('ppt') || type.includes('pptx')) {
+            return '<i class="fa fa-file-powerpoint-o text-orange-600"></i>';
+        } else if (type.includes('text') || type.includes('txt')) {
+            return '<i class="fa fa-file-text-o text-gray-600"></i>';
+        } else if (type.includes('image') || type.includes('jpg') || type.includes('png') || type.includes('jpeg')) {
+            return '<i class="fa fa-file-image-o text-purple-600"></i>';
+        } else {
+            return '<i class="fa fa-file-o text-gray-600"></i>';
+        }
+    }
+
+    // 文档详情模态框
+    const documentDetailModal = document.getElementById('document-detail-modal');
+    const documentDetailLoading = document.getElementById('document-detail-loading');
+    const documentDetailContent = document.getElementById('document-detail-content');
+    const documentDetailError = document.getElementById('document-detail-error');
+    const closeDetailModal = document.getElementById('close-detail-modal');
+    const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
+    const retryLoadDetail = document.getElementById('retry-load-detail');
+
+    // 关闭模态框
+    function closeModal() {
+        documentDetailModal.classList.add('hidden');
+    }
+
+    closeDetailModal.addEventListener('click', closeModal);
+    closeDetailModalBtn.addEventListener('click', closeModal);
+
+    // 点击模态框背景关闭
+    documentDetailModal.addEventListener('click', (e) => {
+        if (e.target === documentDetailModal) {
+            closeModal();
+        }
+    });
+
+    // 打开文档详情
+    function openDocumentDetail(fileId) {
+        documentDetailModal.classList.remove('hidden');
+        documentDetailLoading.classList.remove('hidden');
+        documentDetailContent.classList.add('hidden');
+        documentDetailError.classList.add('hidden');
+
+        fetch(API_BASE_URL + `/data/files/${fileId}`)
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error('服务器错误');
+            }
+          })
+          .then(data => {
+            renderDocumentDetail(data.data);
+            documentDetailLoading.classList.add('hidden');
+            documentDetailContent.classList.remove('hidden');
+          })
+          .catch(error => {
+            console.error('获取文档详情失败:', error);
+            documentDetailLoading.classList.add('hidden');
+            documentDetailError.classList.remove('hidden');
+          });
+    }
+
+    // 渲染文档详情
+    function renderDocumentDetail(detail) {
+        document.getElementById('detail-file-id').textContent = detail.fileId;
+        document.getElementById('detail-workspace').textContent = detail.workspace;
+        document.getElementById('detail-author').textContent = detail.author;
+        document.getElementById('detail-filename').textContent = detail.sourceFileName;
+        document.getElementById('detail-creation-date').textContent = detail.creationDate;
+        document.getElementById('detail-page-count').textContent = detail.pageCount;
+        document.getElementById('detail-char-count').textContent = detail.charCount;
+        document.getElementById('detail-word-count').textContent = detail.wordCount;
+        document.getElementById('detail-sentence-count').textContent = detail.sentenceCount;
+        document.getElementById('detail-keywords').textContent = detail.keywords;
+        // 渲染文本内容
+        document.getElementById('detail-text').textContent = detail.text;
+    }
+
+    // 重试加载文档详情
+    retryLoadDetail.addEventListener('click', () => {
+        const fileId = document.getElementById('detail-file-id').textContent;
+        if (fileId && fileId !== '-') {
+            openDocumentDetail(fileId);
+        }
+    });
+
+    // 初始化页面
+    fetchDocuments();
+</script>
+</body>
+</html>
+    

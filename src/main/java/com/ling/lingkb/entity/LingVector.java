@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 public class LingVector {
     private int id;
     private String workspace;
+    private String fileId;
     private Integer nodeId;
     private String txt;
     private String vector;
