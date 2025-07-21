@@ -5,11 +5,13 @@ import com.ling.lingkb.global.SoleMapper;
 import com.ling.lingkb.llm.data.extractor.LanguageExtractor;
 import com.ling.lingkb.llm.data.parser.DocumentParserFactory;
 import com.ling.lingkb.llm.data.processor.TextProcessorFactory;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import javax.annotation.Resource;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -42,27 +44,49 @@ public class DataFeeder {
         this.dataFeedDao = dataFeedDao;
     }
 
-    public String createFileId() {
+    public String createDocId() {
         return UUID.randomUUID().toString().replaceAll("-", "");
     }
 
-    public void feed(String fileId, Path filePath) throws Exception {
+    public void feed(String docId, Path filePath) throws Exception {
         LingDocument lingDocument = parserFactory.parse(filePath.toFile());
         lingDocument = processorFactory.process(lingDocument);
         lingDocument = languageExtractor.doExtract(lingDocument);
-        lingDocument.setFileId(fileId);
+        lingDocument.setDocId(docId);
         lingDocument.setWorkspace(workspace);
-        lingDocument.setSize(Files.size(filePath));
         Files.deleteIfExists(filePath);
         soleMapper.saveDocument(lingDocument);
         dataFeedDao.feed(lingDocument);
     }
 
-    public List<LingDocument> getFileIdList() {
+    public void feed(String docId, String url, String type) throws Exception {
+        if (StringUtils.equals("serverPath", type)) {
+            List<LingDocument> lingDocuments = parserFactory.batchParse(Path.of(url).toFile());
+            for (LingDocument lingDocument : lingDocuments) {
+                lingDocument = processorFactory.process(lingDocument);
+                lingDocument = languageExtractor.doExtract(lingDocument);
+                lingDocument.setDocId(docId);
+                lingDocument.setWorkspace(workspace);
+                soleMapper.saveDocument(lingDocument);
+                dataFeedDao.feed(lingDocument);
+            }
+        } else {
+            LingDocument lingDocument = parserFactory.parseUrl(url, type);
+            lingDocument = processorFactory.process(lingDocument);
+            lingDocument = languageExtractor.doExtract(lingDocument);
+            lingDocument.setDocId(docId);
+            lingDocument.setWorkspace(workspace);
+            lingDocument.setSize(lingDocument.getText().getBytes(StandardCharsets.UTF_8).length);
+            soleMapper.saveDocument(lingDocument);
+            dataFeedDao.feed(lingDocument);
+        }
+    }
+
+    public List<LingDocument> getDocIdList() {
         return soleMapper.queryMajorByWorkspace(workspace);
     }
 
-    public LingDocument getDocument(String fileId) {
-        return soleMapper.queryDocumentByFileId(fileId);
+    public LingDocument getDocument(String docId) {
+        return soleMapper.queryDocumentByDocId(docId);
     }
 }

@@ -34,8 +34,7 @@ public class StructureProcessor extends AbstractTextProcessor {
 
     private static final Pattern FOOTNOTE_CONTENT_PATTERN = Pattern.compile("^\\[([0-9]+)\\](.*)$", Pattern.MULTILINE);
 
-    private static final Pattern WATERMARK_PATTERN =
-            Pattern.compile(".*(版权|COPYRIGHT|CONFIDENTIAL).*", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern WATERMARK_PATTERN = Pattern.compile("(?i)(版权|COPYRIGHT|CONFIDENTIAL)[^\\n]*\\n?");
 
     private static final List<Pattern> TITLE_PATTERNS =
             Arrays.asList(Pattern.compile("^第([零一二三四五六七八九十百千0-9]+)[章节].*$"), Pattern.compile("^([0-9]+)\\..*$"),

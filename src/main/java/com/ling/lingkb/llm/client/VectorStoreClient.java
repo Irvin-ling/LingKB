@@ -130,7 +130,7 @@ public class VectorStoreClient {
                     Files.deleteIfExists(Path.of(vectorBakPath));
                     Files.move(Path.of(vectorDataPath), Path.of(vectorBakPath), StandardCopyOption.REPLACE_EXISTING);
                 }
-                int lastMaxNodeId = Optional.ofNullable(lingVectors.get(lingVectors.size() - 1).getNodeId()).orElse(-1);
+                int lastMaxNodeId = Optional.ofNullable(soleMapper.queryMaxNodeId(workspace)).orElse(-1);
                 vectorValues.addAll(lingVectors);
                 BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
                 try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
@@ -149,15 +149,16 @@ public class VectorStoreClient {
         }
     }
 
-    public void addVectors(String fileId, List<String> texts, List<float[]> vectors) {
+    public void addVectors(String docId, List<String> texts, List<float[]> vectors) {
         lock.writeLock().lock();
         try {
             List<LingVector> vectorList = new ArrayList<>();
             for (int i = 0; i < texts.size(); i++) {
                 String text = texts.get(i);
                 float[] vector = vectors.get(i);
-                LingVector lingVector = LingVector.builder().workspace(workspace).fileId(fileId).txt(text)
-                        .vector(floatsToString(vector)).persisted(false).build();
+                LingVector lingVector =
+                        LingVector.builder().workspace(workspace).docId(docId).txt(text).vector(floatsToString(vector))
+                                .persisted(false).build();
                 vectorList.add(lingVector);
             }
             soleMapper.batchSaveVectors(vectorList);
@@ -204,7 +205,6 @@ public class VectorStoreClient {
     private List<String> queryVectorTxt(SearchResult sr) {
         List<Integer> nodeIds = new ArrayList<>();
         for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
-            System.out.println(nodeScore.score);
             if (nodeScore.score >= vectorSearchScore) {
                 nodeIds.add(nodeScore.node);
             }

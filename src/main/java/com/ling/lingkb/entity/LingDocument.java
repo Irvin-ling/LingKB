@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LingDocument {
     private String text;
-    private String fileId;
+    private String docId;
     private String workspace;
     private String author;
     private long size;

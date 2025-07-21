@@ -50,7 +50,7 @@ public class ConfluenceTreeParser implements DocumentParser {
     private String username;
     private String password;
     private String authToken;
-    private AuthType authType = AuthType.NONE;
+    private AuthType authType = AuthType.BASIC;
 
     public enum AuthType {
         /**
@@ -111,7 +111,7 @@ public class ConfluenceTreeParser implements DocumentParser {
                 }
             }
         }
-        authType = AuthType.valueOf(params.getOrDefault("authType", "NONE"));
+        authType = AuthType.valueOf(params.getOrDefault("authType", "BASIC"));
         switch (authType) {
             case BASIC: {
                 setBasicAuthCredentials(params.get("username"), params.get("password"));
@@ -150,7 +150,7 @@ public class ConfluenceTreeParser implements DocumentParser {
         String currentContent = parseConfluenceContent(doc);
         if (currentContent.length() > dataMaxLength) {
             log.warn("current file-{} content truncated due to size limit {}", doc.title(), dataMaxLength);
-            currentContent = combinedContent.substring(0, dataMaxLength);
+            currentContent = currentContent.substring(0, dataMaxLength);
         }
         combinedContent.append(pageBreakSymbols).append(doc.title()).append("\n").append(currentContent);
 
@@ -216,8 +216,7 @@ public class ConfluenceTreeParser implements DocumentParser {
 
     private List<String> findChildPageLinks(String baseUrl) throws IOException {
         List<String> childUrls = new ArrayList<>();
-        String pageId = extractPageIdFromUrl(baseUrl);
-
+        String pageId = extractParamFromUrl(baseUrl, "pageId");
         if (pageId == null) {
             return childUrls;
         }
@@ -236,7 +235,7 @@ public class ConfluenceTreeParser implements DocumentParser {
         return childUrls;
     }
 
-    private String extractPageIdFromUrl(String url) {
+    private String extractParamFromUrl(String url, String paramName) {
         try {
             Matcher matcher = PAGE_ID_PATTERN.matcher(url);
             if (matcher.find()) {
@@ -249,8 +248,8 @@ public class ConfluenceTreeParser implements DocumentParser {
             if (query != null) {
                 String[] pairs = query.split("&");
                 for (String pair : pairs) {
-                    if (pair.startsWith("pageId=")) {
-                        return pair.substring("pageId=".length());
+                    if (pair.startsWith(paramName + "=")) {
+                        return pair.substring(paramName.length() + 1);
                     }
                 }
             }

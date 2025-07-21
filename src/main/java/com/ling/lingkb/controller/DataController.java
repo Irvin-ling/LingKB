@@ -4,11 +4,14 @@ import com.ling.lingkb.entity.LingDocument;
 import com.ling.lingkb.entity.Reply;
 import com.ling.lingkb.llm.data.DataFeeder;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -49,8 +52,8 @@ public class DataController {
             return Reply.failure("Upload failed, please select a file");
         }
 
-        String fileId = dataFeeder.createFileId();
-        String fileName = fileId + "_" + file.getOriginalFilename();
+        String docId = dataFeeder.createDocId();
+        String fileName = docId + "_" + file.getOriginalFilename();
         Path filePath = Paths.get(uploadFileDir).resolve(fileName);
         try {
             file.transferTo(filePath);
@@ -58,23 +61,43 @@ public class DataController {
             log.error("Upload failed:", e);
             return Reply.failure(e.getMessage());
         }
-        dataFeeder.feed(fileId, filePath);
-        return Reply.success(fileId);
+        dataFeeder.feed(docId, filePath);
+        return Reply.success(docId);
     }
 
-    @GetMapping("/files")
-    public Reply files() {
-        List<LingDocument> fileIds = dataFeeder.getFileIdList();
-        return Reply.success(fileIds);
-    }
-
-    @GetMapping("/files/{fileId}")
-    public Reply file(@PathVariable String fileId) {
-        LingDocument document = dataFeeder.getDocument(fileId);
-        if (document == null) {
-            return Reply.failure("The file does not exist or is being parsed. Please try again later.");
+    @GetMapping("/parse")
+    public Reply parseUrl(@RequestParam("url") String url, @RequestParam("type") String type) throws Exception {
+        url = URLDecoder.decode(url, StandardCharsets.UTF_8);
+        if (isValidUrl(url)) {
+            String docId = dataFeeder.createDocId();
+            dataFeeder.feed(docId, url, type);
+            return Reply.success(docId);
+        } else {
+            return Reply.failure("Incorrect URL format");
         }
-        return Reply.success(dataFeeder.getDocument(fileId));
     }
 
+    @GetMapping("/docs")
+    public Reply docs() {
+        List<LingDocument> docs = dataFeeder.getDocIdList();
+        return Reply.success(docs);
+    }
+
+    @GetMapping("/docs/{docId}")
+    public Reply file(@PathVariable String docId) {
+        LingDocument document = dataFeeder.getDocument(docId);
+        if (document == null) {
+            return Reply.failure("The doc does not exist or is being parsed. Please try again later.");
+        }
+        return Reply.success(dataFeeder.getDocument(docId));
+    }
+
+    private static boolean isValidUrl(String url) {
+        try {
+            URI uri = new URI(url);
+            return uri.getScheme() != null;
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
 }

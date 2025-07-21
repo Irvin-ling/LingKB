@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>知识库管理系统</title>
+    <title>灵知库管理系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
@@ -59,7 +59,7 @@
         <div class="flex items-center justify-between h-16 px-4 border-b">
             <div class="flex items-center space-x-2">
                 <i class="fa fa-book text-primary text-2xl"></i>
-                <h1 class="text-xl font-bold text-primary">Ling知识库管理系统</h1>
+                <h1 class="text-xl font-bold text-primary">灵知库管理系统</h1>
             </div>
             <button class="md:hidden text-gray-500 hover:text-primary">
                 <i class="fa fa-times"></i>
@@ -222,6 +222,54 @@
                   <i class="fa fa-arrow-down mr-1"></i> 5%
                 </span>
                             <span class="text-gray-500 ml-2">较上月</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 新增：URL 输入框和按钮 -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4">通过 URL 获取文本</h3>
+                    <div class="flex items-center mb-4 space-x-4">
+                        <div class="flex items-center">
+                            <input type="radio" id="url-type-confluence" name="url-type" value="confluence" checked
+                                   class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+                            <label for="url-type-confluence"
+                                   class="ml-2 text-sm font-medium text-gray-700">Confluence</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="url-type-web" name="url-type" value="web"
+                                   class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+                            <label for="url-type-web" class="ml-2 text-sm font-medium text-gray-700">Web URL</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="radio" id="url-type-dir" name="url-type" value="serverPath"
+                                   class="w-4 h-4 text-primary focus:ring-primary border-gray-300">
+                            <label for="url-type-web" class="ml-2 text-sm font-medium text-gray-700">Server Path</label>
+                        </div>
+                        <p>注：路径后可增加 <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-700">&username=用户名&password=密码</code>
+                            认证参数</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <input type="text" id="url-input" placeholder="输入 Confluence 或 Web URL"
+                               class="pl-3 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 flex-1">
+                        <button id="fetch-url-btn"
+                                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                            获取文本
+                        </button>
+                    </div>
+                    <div id="url-success" class="mt-4 hidden">
+                        <div class="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-center">
+                            <i class="fa fa-check-circle mr-3"></i>
+                            <div>
+                                <p class="font-medium">解析成功</p>
+                                <p class="text-sm">文件ID: <span id="url-success-id"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="url-error" class="mt-4 hidden">
+                        <div class="bg-danger/10 border border-danger/30 text-danger px-4 py-3 rounded-lg flex items-center">
+                            <i class="fa fa-exclamation-circle mr-3"></i>
+                            <p class="font-medium">获取文本失败，请检查 URL 或稍后再试</p>
                         </div>
                     </div>
                 </div>
@@ -583,13 +631,16 @@
                         body: formData
                     }).then(response => response.json())
                         .then(data => {
-                            // 处理成功响应
-                            uploadedFileId.textContent = data.data;
-                            uploadSuccess.classList.remove('hidden');
-                            uploadProgressContainer.classList.add('hidden');
-
-                            // 刷新文档列表
-                            fetchDocuments();
+                            if (data.success) {
+                                uploadedFileId.textContent = data.data;
+                                uploadSuccess.classList.remove('hidden');
+                                uploadProgressContainer.classList.add('hidden');
+                                fetchDocuments();
+                            } else {
+                                uploadError.classList.remove('hidden');
+                                uploadProgressContainer.classList.add('hidden');
+                                console.error('上传失败:', error);
+                            }
                         })
                         .catch(error => {
                             // 处理错误
@@ -618,19 +669,34 @@
     // 获取文档列表
     function fetchDocuments() {
         // 实际项目中应使用以下代码进行真实的API调用
-        fetch(API_BASE_URL + '/data/files')
+        fetch(API_BASE_URL + '/data/docs')
             .then(response => response.json())
             .then(data => {
-                renderDocuments(data.data);
+                if (data.success) {
+                    renderDocuments(data.data);
+                }
             })
             .catch(error => {
                 console.error('获取文档列表失败:', error);
             });
     }
+    
+    function getFileName(fileName, docId) {
+        if (!fileName) return '';
+        const webIndex = fileName.indexOf('http');
+        if(webIndex !== -1) {
+            return fileName.substring(0, 10) + "...";
+        }
+       return fileName.replace(docId + "_", '');
+    }
 
     function getFileExtension(fileName) {
         if (!fileName) return '';
         const lastDotIndex = fileName.lastIndexOf('.');
+        const webIndex = fileName.indexOf('http');
+        if(webIndex !== -1) {
+            return 'url';
+        }
         return lastDotIndex === -1 ? '' : fileName.substring(lastDotIndex + 1);
     }
 
@@ -667,7 +733,7 @@
             html += `
           <tr class="hover:bg-gray-50 transition-custom">
             <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-primary cursor-pointer hover:underline view-detail" data-id="${doc.fileId}">${doc.fileId}</span>
+              <span class="text-primary cursor-pointer hover:underline view-detail" data-id="${doc.docId}">${doc.docId}</span>
             </td>
             <td class="px-4 py-4 whitespace-nowrap">
               <div class="flex items-center">
@@ -675,7 +741,7 @@
                   ${fileTypeIcon}
                 </div>
                 <div>
-                  <div class="text-sm font-medium text-gray-900">${doc.sourceFileName.replace(doc.fileId + "_", '')}</div>
+                  <div class="text-sm font-medium text-gray-900">${getFileName(doc.sourceFileName, doc.docId)}</div>
                 </div>
               </div>
             </td>
@@ -694,7 +760,7 @@
               </span>
             </td>
             <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button class="text-primary hover:text-primary/80 mr-3 view-detail" data-id="${doc.fileId}">
+              <button class="text-primary hover:text-primary/80 mr-3 view-detail" data-id="${doc.docId}">
                 <i class="fa fa-eye"></i> 查看
               </button>
               <button class="text-gray-500 hover:text-gray-700">
@@ -706,7 +772,6 @@
         });
 
         documentsTableBody.innerHTML = html;
-
         // 更新统计数据
         totalDocs.textContent = documents.length;
         newDocs.textContent = Math.floor(documents.length * 0.3);
@@ -726,8 +791,8 @@
         // 添加查看详情事件监听
         document.querySelectorAll('.view-detail').forEach(btn => {
             btn.addEventListener('click', () => {
-                const fileId = btn.getAttribute('data-id');
-                openDocumentDetail(fileId);
+                const docId = btn.getAttribute('data-id');
+                openDocumentDetail(docId);
             });
         });
     }
@@ -751,6 +816,49 @@
             return '<i class="fa fa-file-o text-gray-600"></i>';
         }
     }
+
+    // 新增：通过 URL 获取文本
+    const urlInput = document.getElementById('url-input');
+    const fetchUrlBtn = document.getElementById('fetch-url-btn');
+    const urlSuccess = document.getElementById('url-success');
+    const urlSuccessId = document.getElementById('url-success-id');
+    const urlError = document.getElementById('url-error');
+    const urlTypeRadios = document.querySelectorAll('input[name="url-type"]');
+
+    fetchUrlBtn.addEventListener('click', async () => {
+        const url = urlInput.value;
+        if (!url) return;
+
+        urlSuccess.classList.add('hidden');
+        urlError.classList.add('hidden');
+
+        let selectedUrlType = 'confluence';
+        urlTypeRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedUrlType = radio.value;
+            }
+        });
+
+        fetch(API_BASE_URL + '/data/parse?type=' + selectedUrlType + '&url=' + encodeURIComponent(url)).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    urlSuccessId.textContent = data.data;
+                    urlSuccess.classList.remove('hidden');
+                    fetchDocuments();
+                } else {
+                    urlError.classList.remove('hidden');
+                    console.error('解析失败:', data.message);
+                }
+            })
+            .catch(error => {
+                // 处理错误
+                urlError.classList.remove('hidden');
+                console.error('解析失败:', error);
+            });
+        // 刷新文档列表
+        fetchDocuments();
+    });
+
 
     // 文档详情模态框
     const documentDetailModal = document.getElementById('document-detail-modal');
@@ -777,35 +885,35 @@
     });
 
     // 打开文档详情
-    function openDocumentDetail(fileId) {
+    function openDocumentDetail(docId) {
         documentDetailModal.classList.remove('hidden');
         documentDetailLoading.classList.remove('hidden');
         documentDetailContent.classList.add('hidden');
         documentDetailError.classList.add('hidden');
 
-        fetch(API_BASE_URL + `/data/files/${fileId}`)
-          .then(response => {
-            if (response.ok) {
-              return response.json();
-            } else {
-              throw new Error('服务器错误');
-            }
-          })
-          .then(data => {
-            renderDocumentDetail(data.data);
-            documentDetailLoading.classList.add('hidden');
-            documentDetailContent.classList.remove('hidden');
-          })
-          .catch(error => {
-            console.error('获取文档详情失败:', error);
-            documentDetailLoading.classList.add('hidden');
-            documentDetailError.classList.remove('hidden');
-          });
+        fetch(API_BASE_URL + `/data/docs/${docId}`)
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('服务器错误');
+                }
+            })
+            .then(data => {
+                renderDocumentDetail(data.data);
+                documentDetailLoading.classList.add('hidden');
+                documentDetailContent.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('获取文档详情失败:', error);
+                documentDetailLoading.classList.add('hidden');
+                documentDetailError.classList.remove('hidden');
+            });
     }
 
     // 渲染文档详情
     function renderDocumentDetail(detail) {
-        document.getElementById('detail-file-id').textContent = detail.fileId;
+        document.getElementById('detail-file-id').textContent = detail.docId;
         document.getElementById('detail-workspace').textContent = detail.workspace;
         document.getElementById('detail-author').textContent = detail.author;
         document.getElementById('detail-filename').textContent = detail.sourceFileName;
@@ -827,9 +935,8 @@
         }
     });
 
-    // 初始化页面
+    // 页面加载时获取文档列表
     fetchDocuments();
 </script>
 </body>
 </html>
-    

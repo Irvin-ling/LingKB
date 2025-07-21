@@ -43,7 +43,7 @@ public class DataFeedDao {
         List<List<String>> sentenceChunks = splitIntoChunks(sentences);
         for (List<String> sentenceChunk : sentenceChunks) {
             List<float[]> embeddingList = embeddingClient.getEmbeddings(sentenceChunk);
-            vectorStoreClient.addVectors(lingDocument.getFileId(), sentenceChunk, embeddingList);
+            vectorStoreClient.addVectors(lingDocument.getDocId(), sentenceChunk, embeddingList);
         }
     }
 

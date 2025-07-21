@@ -81,6 +81,6 @@ public class WebUrlParser implements DocumentParser {
 
     @Override
     public Set<String> supportedTypes() {
-        return Set.of("http", "https");
+        return Set.of("http", "https", "web");
     }
 }

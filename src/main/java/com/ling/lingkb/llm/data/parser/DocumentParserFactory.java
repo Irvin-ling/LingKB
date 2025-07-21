@@ -4,6 +4,7 @@ import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.entity.LingDocument;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,7 +72,16 @@ public class DocumentParserFactory {
         String extension = getFileExtension(path);
         DocumentParser parser = getParser(extension);
         log.debug("Using parser [{}] for file: {}", parser.getClass().getSimpleName(), file.getName());
-        return parser.parse(path);
+        LingDocument lingDocument = parser.parse(path);
+        lingDocument.setSize(Files.size(path));
+        return lingDocument;
+    }
+
+    @CodeHint
+    public LingDocument parseUrl(String url, String type) throws Exception {
+        DocumentParser parser = getParser(type);
+        log.debug("Using parser [{}] for url: {}", parser.getClass().getSimpleName(), url);
+        return parser.parse(url);
     }
 
     /**

@@ -34,7 +34,7 @@ public class EmbeddingClient {
     }
 
     public float[] getEmbedding(String text) {
-        log.info("convert to vector：{}", text);
+        log.debug("convert to vector：{}", text);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, String> requestBody = new HashMap<>(1);
@@ -74,7 +74,7 @@ public class EmbeddingClient {
     }
 
     public List<float[]> getEmbeddings(List<String> textList) {
-        log.info("convert to vector：{}", String.join("+", textList));
+        log.debug("convert to vector：{}", String.join("+", textList));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         Map<String, List<String>> requestBody = new HashMap<>(1);
