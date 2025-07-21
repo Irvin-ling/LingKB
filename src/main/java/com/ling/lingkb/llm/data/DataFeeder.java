@@ -1,6 +1,7 @@
 package com.ling.lingkb.llm.data;
 
 import com.ling.lingkb.entity.LingDocument;
+import com.ling.lingkb.entity.LingVector;
 import com.ling.lingkb.global.SoleMapper;
 import com.ling.lingkb.llm.data.extractor.LanguageExtractor;
 import com.ling.lingkb.llm.data.parser.DocumentParserFactory;
@@ -50,36 +51,32 @@ public class DataFeeder {
 
     public void feed(String docId, Path filePath) throws Exception {
         LingDocument lingDocument = parserFactory.parse(filePath.toFile());
-        lingDocument = processorFactory.process(lingDocument);
-        lingDocument = languageExtractor.doExtract(lingDocument);
-        lingDocument.setDocId(docId);
-        lingDocument.setWorkspace(workspace);
+        processAndExtract(lingDocument, docId);
         Files.deleteIfExists(filePath);
-        soleMapper.saveDocument(lingDocument);
-        dataFeedDao.feed(lingDocument);
     }
 
     public void feed(String docId, String url, String type) throws Exception {
         if (StringUtils.equals("serverPath", type)) {
             List<LingDocument> lingDocuments = parserFactory.batchParse(Path.of(url).toFile());
             for (LingDocument lingDocument : lingDocuments) {
-                lingDocument = processorFactory.process(lingDocument);
-                lingDocument = languageExtractor.doExtract(lingDocument);
-                lingDocument.setDocId(docId);
-                lingDocument.setWorkspace(workspace);
-                soleMapper.saveDocument(lingDocument);
-                dataFeedDao.feed(lingDocument);
+                processAndExtract(lingDocument, docId);
+                lingDocument.setCreationDate(System.currentTimeMillis());
             }
         } else {
             LingDocument lingDocument = parserFactory.parseUrl(url, type);
-            lingDocument = processorFactory.process(lingDocument);
-            lingDocument = languageExtractor.doExtract(lingDocument);
-            lingDocument.setDocId(docId);
-            lingDocument.setWorkspace(workspace);
+            processAndExtract(lingDocument, docId);
             lingDocument.setSize(lingDocument.getText().getBytes(StandardCharsets.UTF_8).length);
-            soleMapper.saveDocument(lingDocument);
-            dataFeedDao.feed(lingDocument);
+            lingDocument.setCreationDate(System.currentTimeMillis());
         }
+    }
+
+    private void processAndExtract(LingDocument lingDocument, String docId) {
+        lingDocument = processorFactory.process(lingDocument);
+        lingDocument = languageExtractor.doExtract(lingDocument);
+        lingDocument.setDocId(docId);
+        lingDocument.setWorkspace(workspace);
+        soleMapper.saveDocument(lingDocument);
+        dataFeedDao.feed(lingDocument);
     }
 
     public List<LingDocument> getDocIdList() {
@@ -87,6 +84,9 @@ public class DataFeeder {
     }
 
     public LingDocument getDocument(String docId) {
-        return soleMapper.queryDocumentByDocId(docId);
+        LingDocument lingDocument = soleMapper.queryDocumentByDocId(docId);
+        LingVector lingVector = soleMapper.queryVectorByDocId(docId);
+        lingDocument.setPersisted(lingVector.isPersisted());
+        return lingDocument;
     }
 }

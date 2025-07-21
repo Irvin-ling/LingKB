@@ -89,7 +89,7 @@ public class DataController {
         if (document == null) {
             return Reply.failure("The doc does not exist or is being parsed. Please try again later.");
         }
-        return Reply.success(dataFeeder.getDocument(docId));
+        return Reply.success(document);
     }
 
     private static boolean isValidUrl(String url) {

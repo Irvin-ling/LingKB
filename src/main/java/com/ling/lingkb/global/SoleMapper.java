@@ -20,18 +20,21 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface SoleMapper {
 
-    @Select("select max(node_id) from ling_vector where workspace=#{workspace} and is_persisted = 1")
+    @Select("select max(node_id) from ling_vector where workspace=#{workspace} and persisted = 1")
     Integer queryMaxNodeId(String workspace);
 
-    @Select("select * from ling_vector where workspace=#{workspace} and is_persisted = 1")
+    @Select("select * from ling_vector where workspace=#{workspace} and persisted = 1")
     List<LingVector> queryPersistedVectors(String workspace);
 
-    @Select("select * from ling_vector where workspace=#{workspace} and is_persisted = 0")
+    @Select("select * from ling_vector where workspace=#{workspace} and persisted = 0")
     List<LingVector> queryUnPersistedVectors(String workspace);
 
+    @Select("select * from `ling_vector` where doc_id = #{docId} limit 1")
+    LingVector queryVectorByDocId(String docId);
+
     @Update("update ling_vector lv join (select id, #{lastMaxNodeId} + (@rownum := @rownum + 1) as new_node_id " +
-            "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} and is_persisted = 0 order by id) tmp " +
-            "on lv.id = tmp.id set lv.is_persisted = 1, lv.node_id = tmp.new_node_id;")
+            "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} and persisted = 0 order by id) tmp " +
+            "on lv.id = tmp.id set lv.persisted = 1, lv.node_id = tmp.new_node_id;")
     void updateUnPersistedVectors(@Param("workspace") String workspace, @Param("lastMaxNodeId") Integer lastMaxNodeId);
 
     @InsertProvider(type = SqlWorkshop.class, method = "batchSaveVectors")
@@ -57,7 +60,7 @@ public interface SoleMapper {
             String content = vectors.stream().map(ve -> String
                     .format("('%s', '%s', '%s', '%s', %s)", ve.getWorkspace(), ve.getDocId(), ve.getTxt(),
                             ve.getVector(), ve.isPersisted() ? 1 : 0)).collect(Collectors.joining(","));
-            return "insert into `ling_vector` (`workspace`, `doc_id`, `txt`, `vector`, `is_persisted`) values " +
+            return "insert into `ling_vector` (`workspace`, `doc_id`, `txt`, `vector`, `persisted`) values " +
                     content;
         }
 

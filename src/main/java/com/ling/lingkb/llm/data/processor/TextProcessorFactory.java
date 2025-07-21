@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TextProcessorFactory {
 
-    private TextProcessor textProcessor;
+    private AbstractTextProcessor textProcessor;
 
     @Autowired
     public TextProcessorFactory(PrimaryProcessor primaryProcessor, LanguageProcessor languageProcessor,

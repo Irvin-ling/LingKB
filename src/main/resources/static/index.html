@@ -507,6 +507,12 @@
                                         <!-- 关键词将动态生成 -->
                                     </div>
                                 </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 mb-1">处理状态</p>
+                                    <div class="flex flex-wrap gap-2" id="process-status">
+                                        <!-- 动态生成 -->
+                                    </div>
+                                </div>
                             </div>
 
                             <div>
@@ -727,7 +733,7 @@
 
         let html = '';
         documents.forEach(doc => {
-            const statusClass = doc.status === '已处理' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning';
+            const statusClass = 'bg-success/10 text-success';
             const fileTypeIcon = getFileTypeIcon(doc.sourceFileName);
 
             html += `
@@ -923,6 +929,7 @@
         document.getElementById('detail-word-count').textContent = detail.wordCount;
         document.getElementById('detail-sentence-count').textContent = detail.sentenceCount;
         document.getElementById('detail-keywords').textContent = detail.keywords;
+        document.getElementById('process-status').textContent = detail.persisted?'已向量化':'等待向量化...';
         // 渲染文本内容
         document.getElementById('detail-text').textContent = detail.text;
     }

@@ -28,4 +28,5 @@ public class LingDocument {
     private int wordCount;
     private int sentenceCount;
     private String keywords;
+    private boolean persisted;
 }
