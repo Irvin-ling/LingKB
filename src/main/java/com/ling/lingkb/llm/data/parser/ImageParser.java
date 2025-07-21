@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
 import net.sourceforge.tess4j.Tesseract;
@@ -36,13 +37,13 @@ public class ImageParser implements DocumentParser {
     @Value("${data.parser.tess.path}")
     private String dataTessPath;
 
-    private final Tesseract tesseract;
+    private final Tesseract tesseract = new Tesseract();
 
-    public ImageParser() {
-        this.tesseract = new Tesseract();
+    @PostConstruct
+    public void init() {
         if (imageSwitch) {
             this.tesseract.setDatapath(dataTessPath);
-            this.tesseract.setLanguage("eng+chi_sim");
+            this.tesseract.setLanguage("chi_sim");
             this.tesseract.setPageSegMode(6);
             this.tesseract.setOcrEngineMode(1);
             this.tesseract.setHocr(false);

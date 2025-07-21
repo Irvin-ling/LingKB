@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -50,6 +51,8 @@ public class VectorStoreClient {
     private int vectorDefaultDimension;
     @Value("${vector.search.top}")
     private int vectorSearchTop;
+    @Value("${vector.search.score}")
+    private float vectorSearchScore;
 
     private static final VectorTypeSupport VTS = VectorizationProvider.getInstance().getVectorTypeSupport();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -84,7 +87,7 @@ public class VectorStoreClient {
             boolean vectorExist = vectorSize > 0;
             if (vectorExist) {
                 if (!indexExist) {
-                    createIndex(vectorSize);
+                    createIndex();
                 }
                 ReaderSupplier rs = ReaderSupplierFactory.open(Path.of(vectorDataPath));
                 diskIndex = OnDiskGraphIndex.load(rs);
@@ -98,7 +101,7 @@ public class VectorStoreClient {
         }
     }
 
-    private void createIndex(int vectorSize) {
+    private void createIndex() {
         lock.writeLock().lock();
         BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
         try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f, false,
@@ -108,8 +111,7 @@ public class VectorStoreClient {
                 Files.createDirectories(parentDir);
             }
             OnHeapGraphIndex heapIndex = builder.build(vectorValues);
-            DummyVectorValues dummyVectorValues = new DummyVectorValues(vectorDefaultDimension, vectorSize);
-            OnDiskGraphIndex.write(heapIndex, dummyVectorValues, Path.of(vectorDataPath));
+            OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
         } catch (IOException e) {
             log.error("Failed to create index", e);
         } finally {
@@ -117,26 +119,27 @@ public class VectorStoreClient {
         }
     }
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRate = 60000)
     public void persistedSave() {
         lock.writeLock().lock();
         try {
             log.info("Begin persisting the vector index data");
             List<LingVector> lingVectors = soleMapper.queryUnPersistedVectors(workspace);
-            if (diskIndex != null && vectorValues.size() > 0 && !lingVectors.isEmpty()) {
-                Files.deleteIfExists(Path.of(vectorBakPath));
-                Files.move(Path.of(vectorDataPath), Path.of(vectorBakPath), StandardCopyOption.REPLACE_EXISTING);
+            if (!lingVectors.isEmpty()) {
+                if (diskIndex != null) {
+                    Files.deleteIfExists(Path.of(vectorBakPath));
+                    Files.move(Path.of(vectorDataPath), Path.of(vectorBakPath), StandardCopyOption.REPLACE_EXISTING);
+                }
+                int lastMaxNodeId = Optional.ofNullable(lingVectors.get(lingVectors.size() - 1).getNodeId()).orElse(-1);
                 vectorValues.addAll(lingVectors);
                 BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
                 try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
                         false, true)) {
                     OnHeapGraphIndex heapIndex = builder.build(vectorValues);
-                    int vectorSize = diskIndex == null ? 0 : diskIndex.size(0);
-                    DummyVectorValues dummyVectorValues = new DummyVectorValues(vectorDefaultDimension, vectorSize);
-                    OnDiskGraphIndex.write(heapIndex, dummyVectorValues, Path.of(vectorDataPath));
+                    OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
                     loadIndex();
                 }
-                soleMapper.updateUnPersistedVectors(workspace);
+                soleMapper.updateUnPersistedVectors(workspace, lastMaxNodeId);
                 log.info("Persisting completed");
             }
         } catch (IOException e) {
@@ -180,11 +183,7 @@ public class VectorStoreClient {
         try {
             VectorFloat<?> queryVector = VTS.createFloatVector(query);
             SearchResult sr = GraphSearcher.search(queryVector, k, vectorValues, COSINE, diskIndex, Bits.ALL);
-            List<Integer> nodeIds = new ArrayList<>();
-            for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
-                nodeIds.add(nodeScore.node);
-            }
-            return soleMapper.queryVectorTxtByNodeIds(workspace, nodeIds);
+            return queryVectorTxt(sr);
         } finally {
             lock.readLock().unlock();
         }
@@ -196,13 +195,24 @@ public class VectorStoreClient {
             VectorFloat<?> queryVector = VTS.createFloatVector(query);
             SearchScoreProvider ssp = DefaultSearchScoreProvider.exact(queryVector, COSINE, vectorValues);
             SearchResult sr = searcher.search(ssp, k, Bits.ALL);
-            List<Integer> nodeIds = new ArrayList<>();
-            for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
-                nodeIds.add(nodeScore.node);
-            }
-            return soleMapper.queryVectorTxtByNodeIds(workspace, nodeIds);
+            return queryVectorTxt(sr);
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    private List<String> queryVectorTxt(SearchResult sr) {
+        List<Integer> nodeIds = new ArrayList<>();
+        for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
+            System.out.println(nodeScore.score);
+            if (nodeScore.score >= vectorSearchScore) {
+                nodeIds.add(nodeScore.node);
+            }
+        }
+        if (nodeIds.isEmpty()) {
+            return new ArrayList<>();
+        } else {
+            return soleMapper.queryVectorTxtByNodeIds(workspace, nodeIds);
         }
     }
 
@@ -279,41 +289,6 @@ public class VectorStoreClient {
             MutableVectorValues copy = new MutableVectorValues(dimension);
             copy.vectors.addAll(this.vectors);
             return copy;
-        }
-    }
-
-    public class DummyVectorValues implements RandomAccessVectorValues {
-        private final int dimension;
-        private final int size;
-
-        DummyVectorValues(int dimension, int size) {
-            this.dimension = dimension;
-            this.size = size;
-        }
-
-        @Override
-        public int dimension() {
-            return dimension;
-        }
-
-        @Override
-        public VectorFloat<?> getVector(int i) {
-            return null;
-        }
-
-        @Override
-        public int size() {
-            return size;
-        }
-
-        @Override
-        public boolean isValueShared() {
-            return false;
-        }
-
-        @Override
-        public RandomAccessVectorValues copy() {
-            return this;
         }
     }
 

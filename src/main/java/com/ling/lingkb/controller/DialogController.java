@@ -2,11 +2,12 @@ package com.ling.lingkb.controller;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.ling.lingkb.entity.QwenQuestion;
 import com.ling.lingkb.llm.client.EmbeddingClient;
 import com.ling.lingkb.llm.client.QwenClient;
 import com.ling.lingkb.llm.client.VectorStoreClient;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -47,16 +48,14 @@ public class DialogController {
         JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
         String question = lastJson.getString("content");
         float[] query = embeddingClient.getEmbedding(question);
-        String result = vectorStoreClient.searchTopOne(query);
+        List<String> vectorResults = vectorStoreClient.searchTopK(query);
 
-        //TODO To be optimized
-        if (StringUtils.isBlank(result)) {
-            result = String.format("以下内容是知识库对话：问题是[%s]，却未搜索到相关答案，根据你自身能力回答并请告知用户-知识库内没有搜索到相关信息，", question);
+        if (vectorResults.isEmpty()) {
+            lastJson.put("content", String.format(QwenQuestion.CHAT_NO_ANSWER.getFragment(), question));
         } else {
-            result = String.format("以下内容是知识库对话：问题是[%s]，搜索到的相关句子是[%s]，从这些句子里选择最合适的并组织语言后返回", question, result);
+            lastJson.put("content", String.format(QwenQuestion.CHAT_HAS_ANSWER.getFragment(), question,
+                    String.join("\n", vectorResults)));
         }
-        lastJson.put("content", result);
-        System.out.println(json);
         qwenClient.fetchStreamData(json, response);
     }
 }

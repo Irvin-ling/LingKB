@@ -55,7 +55,7 @@ public class DataFeeder {
         lingDocument.setSize(Files.size(filePath));
         Files.deleteIfExists(filePath);
         soleMapper.saveDocument(lingDocument);
-        //dataFeedDao.feed(lingDocument);
+        dataFeedDao.feed(lingDocument);
     }
 
     public List<LingDocument> getFileIdList() {

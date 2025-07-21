@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.SelectProvider;
 import org.apache.ibatis.annotations.Update;
 
 /**
@@ -25,13 +26,15 @@ public interface SoleMapper {
     @Select("select * from ling_vector where workspace=#{workspace} and is_persisted = 0")
     List<LingVector> queryUnPersistedVectors(String workspace);
 
-    @Update("update `ling_vector` set is_persisted = 1 where workspace=#{workspace} and is_persisted = 0")
-    void updateUnPersistedVectors(String workspace);
+    @Update("update ling_vector lv join (select id, #{lastMaxNodeId} + (@rownum := @rownum + 1) as new_node_id " +
+            "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} and is_persisted = 0 order by id) tmp " +
+            "on lv.id = tmp.id set lv.is_persisted = 1, lv.node_id = tmp.new_node_id;")
+    void updateUnPersistedVectors(@Param("workspace") String workspace, @Param("lastMaxNodeId") Integer lastMaxNodeId);
 
     @InsertProvider(type = SqlWorkshop.class, method = "batchSaveVectors")
     void batchSaveVectors(List<LingVector> vectors);
 
-    @InsertProvider(type = SqlWorkshop.class, method = "queryVectorTxtByNodeIds")
+    @SelectProvider(type = SqlWorkshop.class, method = "queryVectorTxtByNodeIds")
     List<String> queryVectorTxtByNodeIds(@Param("workspace") String workspace, @Param("nodeIds") List<Integer> nodeIds);
 
     @Insert("insert into `ling_document` (`file_id`, `workspace`, `text`, `author`, `size`, `source_file_name`, " +

@@ -17,7 +17,7 @@ import java.util.List;
 public class ChineseUtil {
 
     static List<String> getSentences(String text) {
-        return SentencesUtil.toSentenceList(text);
+        return SentencesUtil.toSentenceList(text, false);
     }
 
     static String synonymRewrite(String text) {
