@@ -4,6 +4,7 @@ import com.ling.lingkb.entity.CodeHint;
 import com.ling.lingkb.entity.LingDocument;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -76,10 +77,14 @@ public class DocumentParserFactory {
     }
 
     @CodeHint
-    public LingDocument parseUrl(String url, String type) throws Exception {
-        DocumentParser parser = getParser(type);
-        log.debug("Using parser [{}] for url: {}", parser.getClass().getSimpleName(), url);
-        return parser.parse(url);
+    public List<LingDocument> parseUrl(String url, String type) throws Exception {
+        if (StringUtils.equalsIgnoreCase("serverPath", type)) {
+            return batchParse(new File(url));
+        } else {
+            DocumentParser parser = getParser(type);
+            log.debug("Using parser [{}] for url: {}", parser.getClass().getSimpleName(), url);
+            return parser.parse(url);
+        }
     }
 
     /**
@@ -90,7 +95,7 @@ public class DocumentParserFactory {
      * @throws Exception if batch parsing fails
      */
     @CodeHint
-    public List<LingDocument> batchParse(File file) throws Exception {
+    private List<LingDocument> batchParse(File file) throws Exception {
         if (file.isDirectory()) {
             return Arrays.stream(Objects.requireNonNull(file.listFiles())).parallel().flatMap(f -> {
                 try {

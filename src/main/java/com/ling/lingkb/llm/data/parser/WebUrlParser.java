@@ -2,6 +2,9 @@ package com.ling.lingkb.llm.data.parser;
 
 import com.ling.lingkb.entity.LingDocument;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -27,7 +30,7 @@ public class WebUrlParser implements DocumentParser {
     private int dataFetchTime;
 
     @Override
-    public LingDocument parse(String url) throws Exception {
+    public List<LingDocument> parse(String url) throws Exception {
         log.info("WebUrlParser.parse({})...", url);
         if (url == null || url.trim().isEmpty()) {
             throw new Exception("URL cannot be null or empty");
@@ -41,7 +44,7 @@ public class WebUrlParser implements DocumentParser {
         Document doc = Jsoup.connect(url).timeout(dataFetchTime).userAgent("Mozilla/5.0").get();
         result.setAuthor(getAuthor(doc));
         result.setSourceFileName(url);
-        result.setCreationDate(0);
+        result.setCreationDate(System.currentTimeMillis());
         result.setPageCount(1);
         // Special handling for doc pages
         String content;
@@ -52,7 +55,8 @@ public class WebUrlParser implements DocumentParser {
             content = content.substring(0, dataMaxLength);
         }
         result.setText(content);
-        return result;
+        result.setSize(content.getBytes(StandardCharsets.UTF_8).length);
+        return Collections.singletonList(result);
     }
 
     private String parseGenericWebContent(Document doc) {

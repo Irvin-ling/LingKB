@@ -2,6 +2,8 @@ package com.ling.lingkb.llm.data.parser;
 
 import com.ling.lingkb.entity.LingDocument;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -34,8 +36,8 @@ public interface DocumentParser {
      * @return parsing result containing text content and metadata
      * @throws Exception when parsing fails
      */
-    default LingDocument parse(String url) throws Exception {
-        return null;
+    default List<LingDocument> parse(String url) throws Exception {
+        return new ArrayList<>();
     }
 
     /**

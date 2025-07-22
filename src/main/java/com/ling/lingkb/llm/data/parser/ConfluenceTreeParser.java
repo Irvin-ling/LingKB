@@ -6,6 +6,7 @@ import com.ling.lingkb.entity.LingDocument;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +16,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -85,15 +85,13 @@ public class ConfluenceTreeParser implements DocumentParser {
     }
 
     @Override
-    public LingDocument parse(String rootUrl) throws Exception {
+    public List<LingDocument> parse(String rootUrl) throws Exception {
         log.info("ConfluenceTreeParser.parse({})...", rootUrl);
         visitedUrls.clear();
         init(rootUrl);
-        LingDocument result = new LingDocument();
-        StringBuilder combinedContent = new StringBuilder();
-        parseRecursive(rootUrl, combinedContent, result, 0);
-        result.setText(combinedContent.toString());
-        return result;
+        List<LingDocument> lingDocuments = new ArrayList<>();
+        parseRecursive(rootUrl, lingDocuments, 0);
+        return lingDocuments;
     }
 
     private void init(String urlString) throws Exception {
@@ -130,8 +128,7 @@ public class ConfluenceTreeParser implements DocumentParser {
         }
     }
 
-    private void parseRecursive(String url, StringBuilder combinedContent, LingDocument result, int depth)
-            throws IOException {
+    private void parseRecursive(String url, List<LingDocument> results, int depth) throws IOException {
         if (depth > dataConfluenceDepth || visitedUrls.contains(url)) {
             return;
         }
@@ -140,24 +137,24 @@ public class ConfluenceTreeParser implements DocumentParser {
         Document doc = fetchDocumentWithAuth(url);
         log.info("successfully resolved: {}", url);
 
-        if (StringUtils.isBlank(result.getAuthor())) {
-            result.setAuthor(getAuthor(doc));
-            result.setCreationDate(0);
-            result.setSourceFileName(url);
-        }
-        // Add current page content
-        result.setPageCount(result.getPageCount() + 1);
+        LingDocument lingDocument = new LingDocument();
+        lingDocument.setAuthor(getAuthor(doc));
+        lingDocument.setCreationDate(0);
+        lingDocument.setSourceFileName(url);
+        lingDocument.setCreationDate(System.currentTimeMillis());
+        lingDocument.setPageCount(1);
         String currentContent = parseConfluenceContent(doc);
         if (currentContent.length() > dataMaxLength) {
             log.warn("current file-{} content truncated due to size limit {}", doc.title(), dataMaxLength);
             currentContent = currentContent.substring(0, dataMaxLength);
         }
-        combinedContent.append(pageBreakSymbols).append(doc.title()).append("\n").append(currentContent);
-
+        lingDocument.setText(currentContent);
+        lingDocument.setSize(currentContent.getBytes(StandardCharsets.UTF_8).length);
+        results.add(lingDocument);
         // Recursive processing of subPages
         if (depth < dataConfluenceDepth) {
             for (String childUrl : findChildPageLinks(url)) {
-                parseRecursive(childUrl, combinedContent, result, depth + 1);
+                parseRecursive(childUrl, results, depth + 1);
             }
         }
     }

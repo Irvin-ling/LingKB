@@ -7,14 +7,12 @@ import com.ling.lingkb.global.SoleMapper;
 import com.ling.lingkb.llm.data.extractor.LanguageExtractor;
 import com.ling.lingkb.llm.data.parser.DocumentParserFactory;
 import com.ling.lingkb.llm.data.processor.TextProcessorFactory;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import javax.annotation.Resource;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -58,18 +56,8 @@ public class DataFeeder {
     }
 
     public void feed(String docId, String url, String type) throws Exception {
-        if (StringUtils.equals("serverPath", type)) {
-            List<LingDocument> lingDocuments = parserFactory.batchParse(Path.of(url).toFile());
-            for (LingDocument lingDocument : lingDocuments) {
-                processAndExtract(lingDocument, docId);
-                lingDocument.setCreationDate(System.currentTimeMillis());
-            }
-        } else {
-            LingDocument lingDocument = parserFactory.parseUrl(url, type);
-            processAndExtract(lingDocument, docId);
-            lingDocument.setSize(lingDocument.getText().getBytes(StandardCharsets.UTF_8).length);
-            lingDocument.setCreationDate(System.currentTimeMillis());
-        }
+        List<LingDocument> lingDocuments = parserFactory.parseUrl(url, type);
+        lingDocuments.forEach(lingDocument -> processAndExtract(lingDocument, docId));
     }
 
     private void processAndExtract(LingDocument lingDocument, String docId) {
