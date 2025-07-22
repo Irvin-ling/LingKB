@@ -4,6 +4,7 @@ import com.ling.lingkb.entity.LingDocument;
 import com.ling.lingkb.entity.LingVector;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.InsertProvider;
 import org.apache.ibatis.annotations.Mapper;
@@ -20,22 +21,22 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface SoleMapper {
 
-    @Select("select max(node_id) from ling_vector where workspace=#{workspace} and persisted = 1")
-    Integer queryMaxNodeId(String workspace);
+    @Update("update ling_vector lv join (select id, -1 + (@rownum := @rownum + 1) as new_node_id " +
+            "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} order by id) tmp " +
+            "on lv.id = tmp.id set lv.persisted = 1, lv.node_id = tmp.new_node_id")
+    void resetVector(String workspace);
 
     @Select("select * from ling_vector where workspace=#{workspace} and persisted = 1")
-    List<LingVector> queryPersistedVectors(String workspace);
-
-    @Select("select * from ling_vector where workspace=#{workspace} and persisted = 0")
-    List<LingVector> queryUnPersistedVectors(String workspace);
+    List<LingVector> queryAllVector(String workspace);
 
     @Select("select * from `ling_vector` where doc_id = #{docId} limit 1")
     LingVector queryVectorByDocId(String docId);
 
-    @Update("update ling_vector lv join (select id, #{lastMaxNodeId} + (@rownum := @rownum + 1) as new_node_id " +
-            "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} and persisted = 0 order by id) tmp " +
-            "on lv.id = tmp.id set lv.persisted = 1, lv.node_id = tmp.new_node_id;")
-    void updateUnPersistedVectors(@Param("workspace") String workspace, @Param("lastMaxNodeId") Integer lastMaxNodeId);
+    @Select("select doc_id,node_id,txt,persisted from `ling_vector` where doc_id = #{docId}")
+    List<LingVector> queryVectorsByDocId(String docId);
+
+    @Delete("delete from `ling_vector` where node_id = #{nodeId}")
+    void removeVectorByNodeId(int nodeId);
 
     @InsertProvider(type = SqlWorkshop.class, method = "batchSaveVectors")
     void batchSaveVectors(List<LingVector> vectors);
@@ -53,15 +54,14 @@ public interface SoleMapper {
     LingDocument queryDocumentByDocId(String docId);
 
     @Select("select doc_id,workspace,author,size,source_file_name,creation_date,char_count,keywords from `ling_document` where workspace=#{workspace}")
-    List<LingDocument> queryMajorByWorkspace(String workspace);
+    List<LingDocument> queryDocument(String workspace);
 
     class SqlWorkshop {
         public String batchSaveVectors(List<LingVector> vectors) {
             String content = vectors.stream().map(ve -> String
                     .format("('%s', '%s', '%s', '%s', %s)", ve.getWorkspace(), ve.getDocId(), ve.getTxt(),
                             ve.getVector(), ve.isPersisted() ? 1 : 0)).collect(Collectors.joining(","));
-            return "insert into `ling_vector` (`workspace`, `doc_id`, `txt`, `vector`, `persisted`) values " +
-                    content;
+            return "insert into `ling_vector` (`workspace`, `doc_id`, `txt`, `vector`, `persisted`) values " + content;
         }
 
         public String queryVectorTxtByNodeIds(@Param("workspace") String workspace,

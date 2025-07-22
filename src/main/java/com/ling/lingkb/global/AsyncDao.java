@@ -1,8 +1,8 @@
-package com.ling.lingkb.llm.data;
+package com.ling.lingkb.global;
 
 import com.hankcs.hanlp.utility.SentencesUtil;
 import com.ling.lingkb.entity.LingDocument;
-import com.ling.lingkb.global.SoleMapper;
+import com.ling.lingkb.entity.LingVector;
 import com.ling.lingkb.llm.client.EmbeddingClient;
 import com.ling.lingkb.llm.client.VectorStoreClient;
 import java.util.ArrayList;
@@ -21,30 +21,51 @@ import org.springframework.stereotype.Component;
  * @since 2025/7/17
  */
 @Component
-public class DataFeedDao {
+public class AsyncDao {
     @Value("${qwen.embedding.chunk.size}")
     private int qwenEmbeddingChunkSize;
-
-    private EmbeddingClient embeddingClient;
-    private VectorStoreClient vectorStoreClient;
+    @Value("${system.workspace}")
+    private String workspace;
     @Resource
     private SoleMapper soleMapper;
+    private EmbeddingClient embeddingClient;
+    private VectorStoreClient vectorStoreClient;
 
     @Autowired
-    public DataFeedDao(EmbeddingClient embeddingClient, VectorStoreClient vectorStoreClient) {
+    public AsyncDao(EmbeddingClient embeddingClient, VectorStoreClient vectorStoreClient) {
         this.embeddingClient = embeddingClient;
         this.vectorStoreClient = vectorStoreClient;
     }
-
 
     @Async
     public void feed(LingDocument lingDocument) {
         List<String> sentences = SentencesUtil.toSentenceList(lingDocument.getText(), false);
         List<List<String>> sentenceChunks = splitIntoChunks(sentences);
         for (List<String> sentenceChunk : sentenceChunks) {
-            List<float[]> embeddingList = embeddingClient.getEmbeddings(sentenceChunk);
-            vectorStoreClient.addVectors(lingDocument.getDocId(), sentenceChunk, embeddingList);
+            feedInChunk(lingDocument.getDocId(), sentenceChunk);
         }
+        vectorStoreClient.setToInconsistent();
+    }
+
+    @Async
+    public void feedInChunk(String docId, List<String> texts) {
+        List<float[]> vectors = embeddingClient.getEmbeddings(texts);
+        List<LingVector> vectorList = new ArrayList<>();
+        for (int i = 0; i < texts.size(); i++) {
+            String text = texts.get(i);
+            float[] vector = vectors.get(i);
+            LingVector lingVector =
+                    LingVector.builder().workspace(workspace).docId(docId).txt(text).vector(floatsToString(vector))
+                            .persisted(false).build();
+            vectorList.add(lingVector);
+        }
+        soleMapper.batchSaveVectors(vectorList);
+    }
+
+    @Async
+    public void removeNode(int nodeId) {
+        soleMapper.removeVectorByNodeId(nodeId);
+        vectorStoreClient.setToInconsistent();
     }
 
     private List<List<String>> splitIntoChunks(List<String> sentences) {
@@ -60,5 +81,15 @@ public class DataFeedDao {
             chunks.add(chunk);
         }
         return chunks;
+    }
+
+    private static String floatsToString(float[] array) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(array[0]);
+        final String delimiter = ",";
+        for (int i = 1; i < array.length; i++) {
+            sb.append(delimiter).append(array[i]);
+        }
+        return sb.toString();
     }
 }

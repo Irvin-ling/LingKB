@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -58,144 +58,76 @@ public class VectorStoreClient {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private OnDiskGraphIndex diskIndex;
     private MutableVectorValues vectorValues;
+    private AtomicBoolean consistent = new AtomicBoolean(true);
 
     @Resource
     SoleMapper soleMapper;
 
     @PostConstruct
-    public void init() throws IOException {
-        loadVectors();
-        loadIndex();
-    }
-
-    private void loadVectors() {
+    public void init() {
         lock.writeLock().lock();
         try {
+            soleMapper.resetVector(workspace);
             vectorValues = new MutableVectorValues(vectorDefaultDimension);
-            List<LingVector> lingVectors = soleMapper.queryPersistedVectors(workspace);
+            List<LingVector> lingVectors = soleMapper.queryAllVector(workspace);
             vectorValues.addAll(lingVectors);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
 
-    private void loadIndex() throws IOException {
-        lock.writeLock().lock();
-        try {
-            int vectorSize = vectorValues.size();
-            boolean indexExist = Files.exists(Path.of(vectorDataPath));
-            boolean vectorExist = vectorSize > 0;
-            if (vectorExist) {
-                if (!indexExist) {
-                    createIndex();
+            if (vectorValues.size() > 0) {
+                BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
+                try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
+                        false, true)) {
+                    Path dataPath = Path.of(vectorDataPath);
+                    Path bakPath = Path.of(vectorBakPath);
+                    Path parentDir = dataPath.getParent();
+                    if (parentDir != null) {
+                        Files.createDirectories(parentDir);
+                    }
+                    Files.deleteIfExists(bakPath);
+                    if (Files.exists(dataPath)) {
+                        Files.move(dataPath, bakPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    OnHeapGraphIndex heapIndex = builder.build(vectorValues);
+                    OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
+                    ReaderSupplier rs = ReaderSupplierFactory.open(Path.of(vectorDataPath));
+                    diskIndex = OnDiskGraphIndex.load(rs);
+                } catch (IOException e) {
+                    log.error("Failed to create index", e);
                 }
-                ReaderSupplier rs = ReaderSupplierFactory.open(Path.of(vectorDataPath));
-                diskIndex = OnDiskGraphIndex.load(rs);
-            } else if (indexExist) {
-                log.warn("There are index file but no vectors. The file will be move to ensure data consistency.");
-                Files.deleteIfExists(Path.of(vectorBakPath));
-                Files.move(Path.of(vectorDataPath), Path.of(vectorBakPath), StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                diskIndex = null;
             }
+            consistent.set(true);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    private void createIndex() {
-        lock.writeLock().lock();
-        BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
-        try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f, false,
-                true)) {
-            Path parentDir = Path.of(vectorDataPath).getParent();
-            if (parentDir != null) {
-                Files.createDirectories(parentDir);
-            }
-            OnHeapGraphIndex heapIndex = builder.build(vectorValues);
-            OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
-        } catch (IOException e) {
-            log.error("Failed to create index", e);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60_000)
     public void persistedSave() {
         lock.writeLock().lock();
         try {
             log.info("Begin persisting the vector index data");
-            List<LingVector> lingVectors = soleMapper.queryUnPersistedVectors(workspace);
-            if (!lingVectors.isEmpty()) {
-                if (diskIndex != null) {
-                    Files.deleteIfExists(Path.of(vectorBakPath));
-                    Files.move(Path.of(vectorDataPath), Path.of(vectorBakPath), StandardCopyOption.REPLACE_EXISTING);
-                }
-                int lastMaxNodeId = Optional.ofNullable(soleMapper.queryMaxNodeId(workspace)).orElse(-1);
-                vectorValues.addAll(lingVectors);
-                BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
-                try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
-                        false, true)) {
-                    OnHeapGraphIndex heapIndex = builder.build(vectorValues);
-                    OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
-                    loadIndex();
-                }
-                soleMapper.updateUnPersistedVectors(workspace, lastMaxNodeId);
-                log.info("Persisting completed");
+            if (!consistent.get()) {
+                init();
             }
-        } catch (IOException e) {
-            log.error("Failed to persist index", e);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    public void addVectors(String docId, List<String> texts, List<float[]> vectors) {
-        lock.writeLock().lock();
-        try {
-            List<LingVector> vectorList = new ArrayList<>();
-            for (int i = 0; i < texts.size(); i++) {
-                String text = texts.get(i);
-                float[] vector = vectors.get(i);
-                LingVector lingVector =
-                        LingVector.builder().workspace(workspace).docId(docId).txt(text).vector(floatsToString(vector))
-                                .persisted(false).build();
-                vectorList.add(lingVector);
-            }
-            soleMapper.batchSaveVectors(vectorList);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    public String searchTopOne(float[] query) {
-        List<String> result = searchTopK(query, 1);
-        if (result.size() >= 1) {
-            return result.get(0);
-        }
-        return "";
+    public void setToInconsistent() {
+        consistent.set(false);
     }
 
     public List<String> searchTopK(float[] query) {
-        return searchTopK(query, vectorSearchTop);
-    }
-
-    private List<String> searchTopK(float[] query, int k) {
         lock.readLock().lock();
         try {
+            if (diskIndex == null) {
+                return new ArrayList<>();
+            }
             VectorFloat<?> queryVector = VTS.createFloatVector(query);
-            SearchResult sr = GraphSearcher.search(queryVector, k, vectorValues, COSINE, diskIndex, Bits.ALL);
-            return queryVectorTxt(sr);
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
-    private List<String> searchTopKExactMatches(float[] query, int k) throws IOException {
-        lock.readLock().lock();
-        try (GraphSearcher searcher = new GraphSearcher(diskIndex)) {
-            VectorFloat<?> queryVector = VTS.createFloatVector(query);
-            SearchScoreProvider ssp = DefaultSearchScoreProvider.exact(queryVector, COSINE, vectorValues);
-            SearchResult sr = searcher.search(ssp, k, Bits.ALL);
+            SearchResult sr =
+                    GraphSearcher.search(queryVector, vectorSearchTop, vectorValues, COSINE, diskIndex, Bits.ALL);
             return queryVectorTxt(sr);
         } finally {
             lock.readLock().unlock();
@@ -206,6 +138,7 @@ public class VectorStoreClient {
         List<Integer> nodeIds = new ArrayList<>();
         for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
             if (nodeScore.score >= vectorSearchScore) {
+                System.out.println(nodeScore.score);
                 nodeIds.add(nodeScore.node);
             }
         }
@@ -216,14 +149,16 @@ public class VectorStoreClient {
         }
     }
 
-    private static String floatsToString(float[] array) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(array[0]);
-        final String delimiter = ",";
-        for (int i = 1; i < array.length; i++) {
-            sb.append(delimiter).append(array[i]);
+    private List<String> searchTopExactMatches(float[] query, int k) throws IOException {
+        lock.readLock().lock();
+        try (GraphSearcher searcher = new GraphSearcher(diskIndex)) {
+            VectorFloat<?> queryVector = VTS.createFloatVector(query);
+            SearchScoreProvider ssp = DefaultSearchScoreProvider.exact(queryVector, COSINE, vectorValues);
+            SearchResult sr = searcher.search(ssp, k, Bits.ALL);
+            return queryVectorTxt(sr);
+        } finally {
+            lock.readLock().unlock();
         }
-        return sb.toString();
     }
 
     private float[] stringToFloats(String str) {

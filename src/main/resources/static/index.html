@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,6 +53,7 @@
         }
     </style>
 </head>
+
 <body class="font-inter bg-gray-50 text-dark">
 <div class="flex h-screen overflow-hidden">
     <!-- 侧边栏 -->
@@ -116,9 +118,9 @@
                         <i class="fa fa-bars"></i>
                     </button>
                     <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                <i class="fa fa-search text-gray-400"></i>
-              </span>
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fa fa-search text-gray-400"></i>
+                            </span>
                         <input type="text" placeholder="搜索文档..."
                                class="pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 w-64">
                     </div>
@@ -164,9 +166,9 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center text-sm">
-                <span class="text-success flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 12%
-                </span>
+                                <span class="text-success flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 12%
+                                </span>
                             <span class="text-gray-500 ml-2">较上月</span>
                         </div>
                     </div>
@@ -182,9 +184,9 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center text-sm">
-                <span class="text-success flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 8%
-                </span>
+                                <span class="text-success flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 8%
+                                </span>
                             <span class="text-gray-500 ml-2">较上月</span>
                         </div>
                     </div>
@@ -200,9 +202,9 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center text-sm">
-                <span class="text-danger flex items-center">
-                  <i class="fa fa-arrow-up mr-1"></i> 24%
-                </span>
+                                <span class="text-danger flex items-center">
+                                    <i class="fa fa-arrow-up mr-1"></i> 24%
+                                </span>
                             <span class="text-gray-500 ml-2">较上月</span>
                         </div>
                     </div>
@@ -218,9 +220,9 @@
                             </div>
                         </div>
                         <div class="mt-4 flex items-center text-sm">
-                <span class="text-success flex items-center">
-                  <i class="fa fa-arrow-down mr-1"></i> 5%
-                </span>
+                                <span class="text-success flex items-center">
+                                    <i class="fa fa-arrow-down mr-1"></i> 5%
+                                </span>
                             <span class="text-gray-500 ml-2">较上月</span>
                         </div>
                     </div>
@@ -420,8 +422,8 @@
                                         3
                                     </a>
                                     <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      ...
-                    </span>
+                                            ...
+                                        </span>
                                     <a href="#"
                                        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                         <span class="sr-only">下一页</span>
@@ -549,401 +551,60 @@
     </div>
 </div>
 
-<script>
-    const API_BASE_URL = "http://127.0.0.1:8080";
-    // 侧边栏切换
-    document.getElementById('sidebar-toggle').addEventListener('click', function () {
-        const sidebar = document.querySelector('aside');
-        sidebar.classList.toggle('hidden');
-        sidebar.classList.toggle('fixed');
-        sidebar.classList.toggle('inset-y-0');
-        sidebar.classList.toggle('left-0');
-        sidebar.classList.toggle('z-50');
-    });
+<div id="vector-detail-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4 flex items-center justify-between">
+                            <span>向量详情</span>
+                            <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none"
+                                    id="close-vector-modal">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </h3>
 
-    // 文件上传
-    const uploadContainer = document.getElementById('upload-container');
-    const fileUpload = document.getElementById('file-upload');
-    const uploadProgressContainer = document.getElementById('upload-progress-container');
-    const uploadProgressBar = document.getElementById('upload-progress-bar');
-    const uploadPercentage = document.getElementById('upload-percentage');
-    const uploadFileName = document.getElementById('upload-file-name');
-    const uploadSuccess = document.getElementById('upload-success');
-    const uploadError = document.getElementById('upload-error');
-    const uploadedFileId = document.getElementById('uploaded-file-id');
+                        <!-- 向量详情加载中状态 -->
+                        <div id="vector-detail-loading" class="text-center py-16">
+                            <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
+                            <p class="mt-3 text-gray-500">正在加载向量详情...</p>
+                        </div>
 
-    // 点击上传区域触发文件选择
-    uploadContainer.addEventListener('click', () => {
-        fileUpload.click();
-    });
+                        <!-- 向量详情内容 -->
+                        <div id="vector-detail-content" class="hidden">
+                            <div id="vector-list" class="mt-4"></div>
+                        </div>
 
-    // 拖放功能
-    uploadContainer.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadContainer.classList.add('border-primary');
-        uploadContainer.classList.add('bg-primary/5');
-    });
-
-    uploadContainer.addEventListener('dragleave', () => {
-        uploadContainer.classList.remove('border-primary');
-        uploadContainer.classList.remove('bg-primary/5');
-    });
-
-    uploadContainer.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadContainer.classList.remove('border-primary');
-        uploadContainer.classList.remove('bg-primary/5');
-
-        if (e.dataTransfer.files.length > 0) {
-            handleFiles(e.dataTransfer.files);
-        }
-    });
-
-    // 文件选择变化时处理
-    fileUpload.addEventListener('change', () => {
-        if (fileUpload.files.length > 0) {
-            handleFiles(fileUpload.files);
-        }
-    });
-
-    // 处理文件上传
-    function handleFiles(files) {
-        // 只处理第一个文件
-        const file = files[0];
-        if (!file) return;
-
-        // 显示上传进度
-        uploadProgressContainer.classList.remove('hidden');
-        uploadSuccess.classList.add('hidden');
-        uploadError.classList.add('hidden');
-
-        uploadFileName.textContent = file.name;
-
-        // 模拟上传进度
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 500;
-            if (progress > 100) {
-                progress = 100;
-                clearInterval(interval);
-
-                // 模拟上传完成，实际应替换为真实的API调用
-                setTimeout(() => {
-                    const formData = new FormData();
-                    formData.append('file', file);
-
-                    fetch(API_BASE_URL + '/data/upload', {
-                        method: 'POST',
-                        body: formData
-                    }).then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                uploadedFileId.textContent = data.data;
-                                uploadSuccess.classList.remove('hidden');
-                                uploadProgressContainer.classList.add('hidden');
-                                fetchDocuments();
-                            } else {
-                                uploadError.classList.remove('hidden');
-                                uploadProgressContainer.classList.add('hidden');
-                                console.error('上传失败:', error);
-                            }
-                        })
-                        .catch(error => {
-                            // 处理错误
-                            uploadError.classList.remove('hidden');
-                            uploadProgressContainer.classList.add('hidden');
-                            console.error('上传失败:', error);
-                        });
-                    // 刷新文档列表
-                    fetchDocuments();
-                }, 800);
-            }
-
-            uploadProgressBar.style.width = `${progress}%`;
-            uploadPercentage.textContent = `${Math.round(progress)}%`;
-        }, 300);
-    }
-
-    // 文档列表相关
-    const documentsTableBody = document.getElementById('documents-table-body');
-    const totalDocs = document.getElementById('total-docs');
-    const newDocs = document.getElementById('new-docs');
-    const totalSize = document.getElementById('total-size');
-    const processingDocs = document.getElementById('processing-docs');
-    const totalDocsPagination = document.getElementById('total-docs-pagination');
-
-    // 获取文档列表
-    function fetchDocuments() {
-        // 实际项目中应使用以下代码进行真实的API调用
-        fetch(API_BASE_URL + '/data/docs')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    renderDocuments(data.data);
-                }
-            })
-            .catch(error => {
-                console.error('获取文档列表失败:', error);
-            });
-    }
-    
-    function getFileName(fileName, docId) {
-        if (!fileName) return '';
-        const webIndex = fileName.indexOf('http');
-        if(webIndex !== -1) {
-            return fileName.substring(0, 10) + "...";
-        }
-       return fileName.replace(docId + "_", '');
-    }
-
-    function getFileExtension(fileName) {
-        if (!fileName) return '';
-        const lastDotIndex = fileName.lastIndexOf('.');
-        const webIndex = fileName.indexOf('http');
-        if(webIndex !== -1) {
-            return 'url';
-        }
-        return lastDotIndex === -1 ? '' : fileName.substring(lastDotIndex + 1);
-    }
-
-    function countSize(fileSize) {
-        if (fileSize === 0) return '0 B';
-
-        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(fileSize) / Math.log(1024));
-
-        return `${(fileSize / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
-    }
-
-    // 渲染文档列表
-    function renderDocuments(documents) {
-        if (documents.length === 0) {
-            documentsTableBody.innerHTML = `
-          <tr class="text-center">
-            <td colspan="7" class="px-4 py-8 text-gray-500">
-              <div class="flex flex-col items-center">
-                <i class="fa fa-folder-open-o text-4xl mb-3 text-gray-300"></i>
-                <p>暂无文档，请上传文档</p>
-              </div>
-            </td>
-          </tr>
-        `;
-            return;
-        }
-
-        let html = '';
-        documents.forEach(doc => {
-            const statusClass = 'bg-success/10 text-success';
-            const fileTypeIcon = getFileTypeIcon(doc.sourceFileName);
-
-            html += `
-          <tr class="hover:bg-gray-50 transition-custom">
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-primary cursor-pointer hover:underline view-detail" data-id="${doc.docId}">${doc.docId}</span>
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <div class="flex items-center">
-                <div class="w-8 h-8 rounded bg-gray-100 flex items-center justify-center mr-3">
-                  ${fileTypeIcon}
+                        <!-- 向量详情加载失败状态 -->
+                        <div id="vector-detail-error" class="text-center py-16 hidden">
+                            <i class="fa fa-exclamation-triangle text-4xl text-warning mb-3"></i>
+                            <p class="mt-3 text-gray-700">加载向量详情失败</p>
+                            <p class="mt-2 text-sm text-gray-500">服务器可能暂时不可用，请稍后再试</p>
+                            <button type="button"
+                                    class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                                    id="retry-load-vector">
+                                重试
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-900">${getFileName(doc.sourceFileName, doc.docId)}</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-sm text-gray-900">${getFileExtension(doc.sourceFileName)}</span>
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="text-sm text-gray-900">${countSize(doc.size)}</span>
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-              ${doc.creationDate}
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
-                ${doc.keywords}
-              </span>
-            </td>
-            <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button class="text-primary hover:text-primary/80 mr-3 view-detail" data-id="${doc.docId}">
-                <i class="fa fa-eye"></i> 查看
-              </button>
-              <button class="text-gray-500 hover:text-gray-700">
-                <i class="fa fa-download"></i> 下载
-              </button>
-            </td>
-          </tr>
-        `;
-        });
-
-        documentsTableBody.innerHTML = html;
-        // 更新统计数据
-        totalDocs.textContent = documents.length;
-        newDocs.textContent = Math.floor(documents.length * 0.3);
-        totalDocsPagination.textContent = documents.length;
-
-        // 计算总大小
-        let totalSizeValue = 0;
-        documents.forEach(doc => {
-            totalSizeValue += doc.size;
-        });
-        totalSize.textContent = countSize(totalSizeValue);
-
-        // 计算处理中的文档数
-        const processing = documents.filter(doc => doc.status !== '已处理').length;
-        processingDocs.textContent = "已处理";
-
-        // 添加查看详情事件监听
-        document.querySelectorAll('.view-detail').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const docId = btn.getAttribute('data-id');
-                openDocumentDetail(docId);
-            });
-        });
-    }
-
-    // 根据文件类型获取图标
-    function getFileTypeIcon(type) {
-        type = type.toLowerCase();
-        if (type.includes('word') || type.includes('docx') || type.includes('doc')) {
-            return '<i class="fa fa-file-word-o text-blue-600"></i>';
-        } else if (type.includes('pdf')) {
-            return '<i class="fa fa-file-pdf-o text-red-600"></i>';
-        } else if (type.includes('excel') || type.includes('xlsx') || type.includes('xls')) {
-            return '<i class="fa fa-file-excel-o text-green-600"></i>';
-        } else if (type.includes('powerpoint') || type.includes('ppt') || type.includes('pptx')) {
-            return '<i class="fa fa-file-powerpoint-o text-orange-600"></i>';
-        } else if (type.includes('text') || type.includes('txt')) {
-            return '<i class="fa fa-file-text-o text-gray-600"></i>';
-        } else if (type.includes('image') || type.includes('jpg') || type.includes('png') || type.includes('jpeg')) {
-            return '<i class="fa fa-file-image-o text-purple-600"></i>';
-        } else {
-            return '<i class="fa fa-file-o text-gray-600"></i>';
-        }
-    }
-
-    // 新增：通过 URL 获取文本
-    const urlInput = document.getElementById('url-input');
-    const fetchUrlBtn = document.getElementById('fetch-url-btn');
-    const urlSuccess = document.getElementById('url-success');
-    const urlSuccessId = document.getElementById('url-success-id');
-    const urlError = document.getElementById('url-error');
-    const urlTypeRadios = document.querySelectorAll('input[name="url-type"]');
-
-    fetchUrlBtn.addEventListener('click', async () => {
-        const url = urlInput.value;
-        if (!url) return;
-
-        urlSuccess.classList.add('hidden');
-        urlError.classList.add('hidden');
-
-        let selectedUrlType = 'confluence';
-        urlTypeRadios.forEach(radio => {
-            if (radio.checked) {
-                selectedUrlType = radio.value;
-            }
-        });
-
-        fetch(API_BASE_URL + '/data/parse?type=' + selectedUrlType + '&url=' + encodeURIComponent(url)).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    urlSuccessId.textContent = data.data;
-                    urlSuccess.classList.remove('hidden');
-                    fetchDocuments();
-                } else {
-                    urlError.classList.remove('hidden');
-                    console.error('解析失败:', data.message);
-                }
-            })
-            .catch(error => {
-                // 处理错误
-                urlError.classList.remove('hidden');
-                console.error('解析失败:', error);
-            });
-        // 刷新文档列表
-        fetchDocuments();
-    });
-
-
-    // 文档详情模态框
-    const documentDetailModal = document.getElementById('document-detail-modal');
-    const documentDetailLoading = document.getElementById('document-detail-loading');
-    const documentDetailContent = document.getElementById('document-detail-content');
-    const documentDetailError = document.getElementById('document-detail-error');
-    const closeDetailModal = document.getElementById('close-detail-modal');
-    const closeDetailModalBtn = document.getElementById('close-detail-modal-btn');
-    const retryLoadDetail = document.getElementById('retry-load-detail');
-
-    // 关闭模态框
-    function closeModal() {
-        documentDetailModal.classList.add('hidden');
-    }
-
-    closeDetailModal.addEventListener('click', closeModal);
-    closeDetailModalBtn.addEventListener('click', closeModal);
-
-    // 点击模态框背景关闭
-    documentDetailModal.addEventListener('click', (e) => {
-        if (e.target === documentDetailModal) {
-            closeModal();
-        }
-    });
-
-    // 打开文档详情
-    function openDocumentDetail(docId) {
-        documentDetailModal.classList.remove('hidden');
-        documentDetailLoading.classList.remove('hidden');
-        documentDetailContent.classList.add('hidden');
-        documentDetailError.classList.add('hidden');
-
-        fetch(API_BASE_URL + `/data/docs/${docId}`)
-            .then(response => {
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error('服务器错误');
-                }
-            })
-            .then(data => {
-                renderDocumentDetail(data.data);
-                documentDetailLoading.classList.add('hidden');
-                documentDetailContent.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('获取文档详情失败:', error);
-                documentDetailLoading.classList.add('hidden');
-                documentDetailError.classList.remove('hidden');
-            });
-    }
-
-    // 渲染文档详情
-    function renderDocumentDetail(detail) {
-        document.getElementById('detail-file-id').textContent = detail.docId;
-        document.getElementById('detail-workspace').textContent = detail.workspace;
-        document.getElementById('detail-author').textContent = detail.author;
-        document.getElementById('detail-filename').textContent = detail.sourceFileName;
-        document.getElementById('detail-creation-date').textContent = detail.creationDate;
-        document.getElementById('detail-page-count').textContent = detail.pageCount;
-        document.getElementById('detail-char-count').textContent = detail.charCount;
-        document.getElementById('detail-word-count').textContent = detail.wordCount;
-        document.getElementById('detail-sentence-count').textContent = detail.sentenceCount;
-        document.getElementById('detail-keywords').textContent = detail.keywords;
-        document.getElementById('process-status').textContent = detail.persisted?'已向量化':'等待向量化...';
-        // 渲染文本内容
-        document.getElementById('detail-text').textContent = detail.text;
-    }
-
-    // 重试加载文档详情
-    retryLoadDetail.addEventListener('click', () => {
-        const fileId = document.getElementById('detail-file-id').textContent;
-        if (fileId && fileId !== '-') {
-            openDocumentDetail(fileId);
-        }
-    });
-
-    // 页面加载时获取文档列表
-    fetchDocuments();
-</script>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:ml-3 sm:w-auto sm:text-sm"
+                        id="close-vector-modal-btn">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="index.js"></script>
 </body>
+
 </html>

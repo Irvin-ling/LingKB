@@ -49,6 +49,7 @@ public class DialogController {
         String question = lastJson.getString("content");
         float[] query = embeddingClient.getEmbedding(question);
         List<String> vectorResults = vectorStoreClient.searchTopK(query);
+        System.out.println(String.join("\n", vectorResults));
 
         if (vectorResults.isEmpty()) {
             lastJson.put("content", String.format(QwenQuestion.CHAT_NO_ANSWER.getFragment(), question));
