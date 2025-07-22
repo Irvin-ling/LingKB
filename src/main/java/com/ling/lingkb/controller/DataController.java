@@ -72,8 +72,7 @@ public class DataController {
     public Reply parseUrl(@RequestParam("url") String url, @RequestParam("type") String type) throws Exception {
         url = URLDecoder.decode(url, StandardCharsets.UTF_8);
         if (isValidUrl(url)) {
-            String docId = dataFeeder.createDocId();
-            dataFeeder.feed(docId, url, type);
+            String docId = dataFeeder.feed(url, type);
             return Reply.success(docId);
         } else {
             return Reply.failure("Incorrect URL format");

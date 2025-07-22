@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,9 +56,10 @@ public class DataFeeder {
         Files.deleteIfExists(filePath);
     }
 
-    public void feed(String docId, String url, String type) throws Exception {
+    public String feed(String url, String type) throws Exception {
         List<LingDocument> lingDocuments = parserFactory.parseUrl(url, type);
-        lingDocuments.forEach(lingDocument -> processAndExtract(lingDocument, docId));
+        lingDocuments.forEach(lingDocument -> processAndExtract(lingDocument, createDocId()));
+        return lingDocuments.stream().map(LingDocument::getDocId).collect(Collectors.joining(","));
     }
 
     private void processAndExtract(LingDocument lingDocument, String docId) {
