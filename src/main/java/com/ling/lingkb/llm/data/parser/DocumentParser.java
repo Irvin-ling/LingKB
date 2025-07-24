@@ -41,6 +41,15 @@ public interface DocumentParser {
     }
 
     /**
+     * Parses the document link content, eg: image | table | code | href
+     *
+     * @param lingDocument the URL of the document to be parsed
+     * @param obj          operation objects during parsing
+     */
+    default void linkContentParse(LingDocument lingDocument, Object obj) {
+    }
+
+    /**
      * Gets the set of supported document types
      * <p>
      * Should return file extensions in lowercase format (without "."), e.g.: ["doc", "docx"]
@@ -71,4 +80,5 @@ public interface DocumentParser {
     default int getPriority() {
         return 100;
     }
+
 }

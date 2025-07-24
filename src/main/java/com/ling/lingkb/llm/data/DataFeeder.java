@@ -1,6 +1,7 @@
 package com.ling.lingkb.llm.data;
 
 import com.ling.lingkb.entity.LingDocument;
+import com.ling.lingkb.entity.LingDocumentLink;
 import com.ling.lingkb.entity.LingVector;
 import com.ling.lingkb.global.AsyncDao;
 import com.ling.lingkb.global.SoleMapper;
@@ -67,6 +68,13 @@ public class DataFeeder {
         lingDocument = languageExtractor.doExtract(lingDocument);
         lingDocument.setDocId(docId);
         lingDocument.setWorkspace(workspace);
+        List<LingDocumentLink> links = lingDocument.getLinks();
+        if(links != null && !links.isEmpty()) {
+            for (LingDocumentLink link : links) {
+                link.setDocId(docId);
+                link.setWorkspace(workspace);
+            }
+        }
         soleMapper.saveDocument(lingDocument);
         asyncDao.feed(lingDocument);
     }

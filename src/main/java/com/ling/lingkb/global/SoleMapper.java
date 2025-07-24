@@ -1,6 +1,7 @@
 package com.ling.lingkb.global;
 
 import com.ling.lingkb.entity.LingDocument;
+import com.ling.lingkb.entity.LingDocumentLink;
 import com.ling.lingkb.entity.LingVector;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,13 +22,19 @@ import org.apache.ibatis.annotations.Update;
 @Mapper
 public interface SoleMapper {
 
+    @Select("select * from ling_document_link where workspace=#{workspace} limit #{offset},1")
+    LingDocumentLink queryLink(@Param("workspace") String workspace, @Param("offset") int offset);
+
+    @Select("select desc_vector from ling_document_link where workspace=#{workspace}")
+    List<LingDocumentLink> queryLinkVectors(String workspace);
+
+    @Select("select * from ling_vector where workspace=#{workspace} and persisted = 1")
+    List<LingVector> queryAllVector(String workspace);
+
     @Update("update ling_vector lv join (select id, -1 + (@rownum := @rownum + 1) as new_node_id " +
             "from ling_vector,(select @rownum := 0) r where workspace = #{workspace} order by id) tmp " +
             "on lv.id = tmp.id set lv.persisted = 1, lv.node_id = tmp.new_node_id")
     void resetVector(String workspace);
-
-    @Select("select * from ling_vector where workspace=#{workspace} and persisted = 1")
-    List<LingVector> queryAllVector(String workspace);
 
     @Select("select * from `ling_vector` where doc_id = #{docId} limit 1")
     LingVector queryVectorByDocId(String docId);
@@ -41,6 +48,9 @@ public interface SoleMapper {
     @InsertProvider(type = SqlWorkshop.class, method = "batchSaveVectors")
     void batchSaveVectors(List<LingVector> vectors);
 
+    @InsertProvider(type = SqlWorkshop.class, method = "batchSaveLinks")
+    void batchSaveLinks(List<LingDocumentLink> links);
+
     @SelectProvider(type = SqlWorkshop.class, method = "queryVectorTxtByNodeIds")
     List<String> queryVectorTxtByNodeIds(@Param("workspace") String workspace, @Param("nodeIds") List<Integer> nodeIds);
 
@@ -53,15 +63,25 @@ public interface SoleMapper {
     @Select("select * from `ling_document` where doc_id = #{docId} limit 1")
     LingDocument queryDocumentByDocId(String docId);
 
-    @Select("select doc_id,workspace,author,size,source_file_name,creation_date,char_count,keywords from `ling_document` where workspace=#{workspace}")
+    @Select("select doc_id,workspace,author,size,source_file_name,creation_date,char_count,keywords " +
+            "from `ling_document` where workspace=#{workspace}")
     List<LingDocument> queryDocument(String workspace);
 
     class SqlWorkshop {
         public String batchSaveVectors(List<LingVector> vectors) {
             String content = vectors.stream().map(ve -> String
-                    .format("('%s', '%s', '%s', '%s', %s)", ve.getWorkspace(), ve.getDocId(), ve.getTxt(),
+                    .format("('%s', '%s', '%s', '%s', %s)", ve.getDocId(), ve.getWorkspace(), ve.getTxt(),
                             ve.getVector(), ve.isPersisted() ? 1 : 0)).collect(Collectors.joining(","));
-            return "insert into `ling_vector` (`workspace`, `doc_id`, `txt`, `vector`, `persisted`) values " + content;
+            return "insert into `ling_vector` (`doc_id`, `workspace`, `txt`, `vector`, `persisted`) values " + content;
+        }
+
+        public String batchSaveLinks(List<LingDocumentLink> links) {
+            String content = links.stream().map(link -> String
+                    .format("('%s', '%s', %s, '%s', '%s', '%s', '%s')", link.getDocId(), link.getWorkspace(),
+                            link.getType(), link.getContent(), link.getContentAssistant(), link.getDescText(),
+                            link.getDescVector())).collect(Collectors.joining(","));
+            return "insert into `ling_document_link` (`doc_id`, `workspace`, `type`, `content`, " +
+                    "`content_assistant`, `desc_text`, `desc_vector`) values " + content;
         }
 
         public String queryVectorTxtByNodeIds(@Param("workspace") String workspace,

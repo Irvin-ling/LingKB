@@ -1,5 +1,6 @@
 package com.ling.lingkb.entity;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,4 +30,6 @@ public class LingDocument {
     private int sentenceCount;
     private String keywords;
     private boolean persisted;
+
+    private List<LingDocumentLink> links;
 }

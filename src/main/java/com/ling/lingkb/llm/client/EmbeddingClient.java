@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -29,8 +31,10 @@ public class EmbeddingClient {
 
     private RestTemplate restTemplate;
 
-    public EmbeddingClient() {
-        this.restTemplate = new RestTemplate();
+    @Autowired
+    @Lazy
+    public EmbeddingClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     public float[] getEmbedding(String text) {
@@ -40,8 +44,7 @@ public class EmbeddingClient {
         Map<String, String> requestBody = new HashMap<>(1);
         requestBody.put("input", text);
         HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> responseEntity =
-                restTemplate.postForEntity(qwenEmbeddingUrl, request, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(qwenEmbeddingUrl, request, String.class);
         String responseBody = responseEntity.getBody();
         if (responseBody == null || responseBody.isEmpty()) {
             return new float[0];
@@ -80,8 +83,7 @@ public class EmbeddingClient {
         Map<String, List<String>> requestBody = new HashMap<>(1);
         requestBody.put("input", textList);
         HttpEntity<Map<String, List<String>>> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> responseEntity =
-                restTemplate.postForEntity(qwenEmbeddingUrl, request, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.postForEntity(qwenEmbeddingUrl, request, String.class);
         String responseBody = responseEntity.getBody();
         if (responseBody == null || responseBody.isEmpty()) {
             return new ArrayList<>();

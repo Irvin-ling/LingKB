@@ -2,16 +2,42 @@ package com.ling.lingkb.global;
 
 import com.hankcs.hanlp.utility.SentencesUtil;
 import com.ling.lingkb.entity.LingDocument;
+import com.ling.lingkb.entity.LingDocumentLink;
 import com.ling.lingkb.entity.LingVector;
 import com.ling.lingkb.llm.client.EmbeddingClient;
 import com.ling.lingkb.llm.client.VectorStoreClient;
+import java.nio.charset.Charset;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.ssl.TrustStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Work dao
@@ -22,6 +48,43 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class AsyncDao {
+
+    @Bean(name = "restTemplate")
+    public RestTemplate httpsRestTemplate() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
+        TrustStrategy acceptingTrustStrategy = (X509Certificate[] chain, String authType) -> true;
+        SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
+        SSLConnectionSocketFactory connectionSocketFactory =
+                new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
+        HttpClientBuilder httpClientBuilder = HttpClients.custom().disableAutomaticRetries();
+        httpClientBuilder.setSSLSocketFactory(connectionSocketFactory);
+        HostnameVerifier hostnameVerifier = NoopHostnameVerifier.INSTANCE;
+        SSLConnectionSocketFactory sslConnectionSocketFactory =
+                new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                .register("https", sslConnectionSocketFactory).build();
+        PoolingHttpClientConnectionManager poolingHttpClientConnectionManager =
+                new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        poolingHttpClientConnectionManager.setMaxTotal(5400);
+        poolingHttpClientConnectionManager.setDefaultMaxPerRoute(300);
+        httpClientBuilder.setConnectionManager(poolingHttpClientConnectionManager);
+        CloseableHttpClient httpClient = httpClientBuilder.build();
+        HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+        factory.setConnectTimeout(60 * 1000);
+        factory.setReadTimeout(60 * 1000);
+        factory.setConnectionRequestTimeout(60 * 1000);
+        factory.setHttpClient(httpClient);
+        RestTemplate restTemplate = new RestTemplate(factory);
+        List<HttpMessageConverter<?>> list = restTemplate.getMessageConverters();
+        for (HttpMessageConverter converter : list) {
+            if (converter instanceof StringHttpMessageConverter) {
+                ((StringHttpMessageConverter) converter).setDefaultCharset(Charset.forName("UTF-8"));
+                break;
+            }
+        }
+        return restTemplate;
+    }
+
     @Value("${qwen.embedding.chunk.size}")
     private int qwenEmbeddingChunkSize;
     @Value("${system.workspace}")
@@ -44,6 +107,7 @@ public class AsyncDao {
         for (List<String> sentenceChunk : sentenceChunks) {
             feedInChunk(lingDocument.getDocId(), sentenceChunk);
         }
+        feedLinks(lingDocument.getLinks());
         vectorStoreClient.setToInconsistent();
     }
 
@@ -60,6 +124,19 @@ public class AsyncDao {
             vectorList.add(lingVector);
         }
         soleMapper.batchSaveVectors(vectorList);
+    }
+
+    private void feedLinks(List<LingDocumentLink> links) {
+        if (links != null && !links.isEmpty()) {
+            List<String> descList = links.stream().map(LingDocumentLink::getDescText).collect(Collectors.toList());
+            List<float[]> descVectorList = embeddingClient.getEmbeddings(descList);
+            for (int i = 0; i < links.size(); i++) {
+                LingDocumentLink link = links.get(i);
+                float[] vector = descVectorList.get(i);
+                link.setDescVector(floatsToString(vector));
+            }
+            soleMapper.batchSaveLinks(links);
+        }
     }
 
     @Async

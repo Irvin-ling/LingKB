@@ -3,11 +3,13 @@ package com.ling.lingkb.llm.data.parser;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.ling.lingkb.entity.LingDocument;
+import com.ling.lingkb.entity.LingDocumentLink;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,10 +17,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -135,15 +141,16 @@ public class ConfluenceTreeParser implements DocumentParser {
 
         visitedUrls.add(url);
         Document doc = fetchDocumentWithAuth(url);
-        log.info("successfully resolved: {}", url);
-
+        Element element = findContentArea(doc);
         LingDocument lingDocument = new LingDocument();
+        log.info("successfully resolved: {}", url);
         lingDocument.setAuthor(getAuthor(doc));
         lingDocument.setCreationDate(0);
         lingDocument.setSourceFileName(url);
         lingDocument.setCreationDate(System.currentTimeMillis());
         lingDocument.setPageCount(1);
-        String currentContent = parseConfluenceContent(doc);
+        linkContentParse(lingDocument, element);
+        String currentContent = element.text();
         if (currentContent.length() > dataMaxLength) {
             log.warn("current file-{} content truncated due to size limit {}", doc.title(), dataMaxLength);
             currentContent = currentContent.substring(0, dataMaxLength);
@@ -157,6 +164,204 @@ public class ConfluenceTreeParser implements DocumentParser {
                 parseRecursive(childUrl, results, depth + 1);
             }
         }
+    }
+
+    @SneakyThrows
+    @Override
+    public void linkContentParse(LingDocument lingDocument, Object obj) {
+        Element element = (Element) obj;
+        List<LingDocumentLink> links = new ArrayList<>();
+        extractImages(links, element);
+        extractCodes(links, element);
+        extractTables(links, element);
+        extractWebLinks(lingDocument.getSourceFileName(), links, element);
+        lingDocument.setLinks(links);
+    }
+
+    private void extractImages(List<LingDocumentLink> links, Element element) throws IOException {
+        Elements images = element.select("img");
+        for (Element image : images) {
+            LingDocumentLink link = new LingDocumentLink();
+            link.setType(0);
+            String imgDesc = getPreText(image, "img");
+            if (StringUtils.isNotBlank(imgDesc)) {
+                link.setDescText(imgDesc);
+                String absoluteUrl = image.absUrl("src");
+                byte[] imageBytes = fetchBytesWithAuth(absoluteUrl);
+                link.setContent(addBase64Header(imageBytes));
+                link.setContentAssistant(absoluteUrl);
+                links.add(link);
+            }
+            image.remove();
+        }
+    }
+
+    private String addBase64Header(byte[] imageBytes) {
+        String template = "data:image/%s;base64,%s";
+        String imageType;
+        if (imageBytes[0] == (byte) 0xFF && imageBytes[1] == (byte) 0xD8 && imageBytes[2] == (byte) 0xFF) {
+            imageType = "jpeg";
+        } else if (imageBytes[0] == (byte) 0x89 && imageBytes[1] == (byte) 0x50 && imageBytes[2] == (byte) 0x4E &&
+                imageBytes[3] == (byte) 0x47 && imageBytes[4] == (byte) 0x0D && imageBytes[5] == (byte) 0x0A &&
+                imageBytes[6] == (byte) 0x1A && imageBytes[7] == (byte) 0x0A) {
+            imageType = "png";
+        } else if (imageBytes[0] == (byte) 0x47 && imageBytes[1] == (byte) 0x49 && imageBytes[2] == (byte) 0x46 &&
+                imageBytes[3] == (byte) 0x38) {
+            imageType = "gif";
+        } else if (imageBytes[0] == (byte) 0x42 && imageBytes[1] == (byte) 0x4D) {
+            imageType = "bmp";
+        } else {
+            imageType = "png";
+        }
+        return String.format(template, imageType, Base64.getEncoder().encodeToString(imageBytes));
+    }
+
+    private void extractCodes(List<LingDocumentLink> links, Element element) {
+        Elements codeBlocks = element.select("pre[data-syntaxhighlighter-params]");
+        for (Element code : codeBlocks) {
+            LingDocumentLink link = new LingDocumentLink();
+            link.setType(1);
+            String codeDesc = getPreText(code, "pre");
+            if (StringUtils.isNotBlank(codeDesc)) {
+                link.setDescText(codeDesc);
+                link.setContent(code.text());
+                String params = code.attr("data-syntaxhighlighter-params");
+                String language = parseParam(params, "brush");
+                link.setContentAssistant(StringUtils.isBlank(language) ? "Plain Text" : language);
+                links.add(link);
+            }
+            code.remove();
+        }
+    }
+
+    private void extractTables(List<LingDocumentLink> links, Element element) {
+        Elements tables = element.select("table");
+        for (Element table : tables) {
+            List<List<String>> tableData = new ArrayList<>();
+            Elements rows = table.select("tr");
+            int maxCols = 0;
+            for (Element row : rows) {
+                List<String> rowData = new ArrayList<>();
+                Elements cells = row.select("td, th");
+                for (Element cell : cells) {
+                    int colspan = getSpanValue(cell, "colspan", 1);
+                    String cellText = cell.text().trim();
+                    rowData.add(cellText);
+                    for (int i = 1; i < colspan; i++) {
+                        rowData.add("");
+                    }
+                }
+                if (rowData.size() > maxCols) {
+                    maxCols = rowData.size();
+                }
+                tableData.add(rowData);
+            }
+            for (List<String> row : tableData) {
+                while (row.size() < maxCols) {
+                    row.add("");
+                }
+            }
+
+            LingDocumentLink link = new LingDocumentLink();
+            link.setType(2);
+            String tableDesc = getPreText(table, "table");
+            if (StringUtils.isNotBlank(tableDesc)) {
+                link.setContent(JSON.toJSONString(tableData));
+                link.setDescText(tableDesc + "\n" + link.getContent());
+                link.setContentAssistant(maxCols + "," + rows.size());
+                links.add(link);
+            }
+            table.remove();
+        }
+    }
+
+    private void extractWebLinks(String rootUrl, List<LingDocumentLink> links, Element element)
+            throws MalformedURLException {
+        Elements webLinks = element.select("a");
+        for (Element webLink : webLinks) {
+            LingDocumentLink link = new LingDocumentLink();
+            link.setType(3);
+            link.setDescText(webLink.text());
+            URL url = new URL(rootUrl);
+            link.setContent(url.getProtocol() + "://" + url.getHost() + webLink.attr("href"));
+            link.setContentAssistant(link.getDescText());
+            links.add(link);
+            webLink.remove();
+        }
+    }
+
+    private String getPreText(Element element, String selfTag) {
+        String text = null;
+        if (!StringUtils.equalsAnyIgnoreCase(element.tagName(), selfTag, "div")) {
+            text = element.text();
+        }
+        if (StringUtils.isBlank(text)) {
+            Element preElement = element.previousElementSibling();
+            if (preElement == null) {
+                Element parent = element.parent();
+                if (parent == null) {
+                    return null;
+                } else {
+                    return getPreText(parent, selfTag);
+                }
+            } else {
+                return getPreText(preElement, selfTag);
+            }
+        }
+        return text;
+    }
+
+    private static String parseParam(String params, String key) {
+        String[] pairs = params.split(";\\s*");
+        for (String pair : pairs) {
+            String[] kv = pair.split(":\\s*");
+            if (kv.length == 2 && kv[0].trim().equals(key)) {
+                return kv[1].trim();
+            }
+        }
+        return "";
+    }
+
+    private static int getSpanValue(Element cell, String attr, int defaultValue) {
+        String spanValue = cell.attr(attr);
+        if (!spanValue.isEmpty()) {
+            try {
+                return Integer.parseInt(spanValue);
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    private Element findContentArea(Document doc) {
+        Element contentArea = doc.selectFirst(".body-content");
+        if (contentArea != null) {
+            return contentArea;
+        }
+        return doc.selectFirst(".wiki-content");
+    }
+
+
+    private List<String> findChildPageLinks(String baseUrl) throws IOException {
+        List<String> childUrls = new ArrayList<>();
+        String pageId = extractParamFromUrl(baseUrl, "pageId");
+        if (pageId == null) {
+            return childUrls;
+        }
+
+        String apiUrl = buildAbsoluteUrl(baseUrl, String.format("/rest/api/content/%s/child/page?limit=100", pageId));
+        String response = fetchStringWithAuth(apiUrl);
+
+        List<JSONObject> list = JSON.parseObject(response).getJSONArray("results").toJavaList(JSONObject.class);
+        log.info("pageId({}) find {} child links", pageId, list.size());
+        for (JSONObject obj : list) {
+            String childPageId = obj.getString("id");
+            String childPageUrl =
+                    buildAbsoluteUrl(baseUrl, String.format("/pages/viewpage.action?pageId=%s", childPageId));
+            childUrls.add(childPageUrl);
+        }
+        return childUrls;
     }
 
     private Document fetchDocumentWithAuth(String url) throws IOException {
@@ -174,6 +379,26 @@ public class ConfluenceTreeParser implements DocumentParser {
             case NONE:
             default:
                 return Jsoup.connect(url).timeout(dataFetchTime).userAgent("Mozilla/5.0").get();
+        }
+    }
+
+    private byte[] fetchBytesWithAuth(String url) throws IOException {
+        switch (authType) {
+            case BASIC:
+                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                        .header("Authorization", "Basic " +
+                                java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()))
+                        .execute().bodyAsBytes();
+            case COOKIE:
+                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                        .cookie("JSESSIONID", authToken).execute().bodyAsBytes();
+            case TOKEN:
+                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                        .header("Authorization", "Bearer " + authToken).execute().bodyAsBytes();
+            case NONE:
+            default:
+                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                        .execute().bodyAsBytes();
         }
     }
 
@@ -196,40 +421,6 @@ public class ConfluenceTreeParser implements DocumentParser {
                 return Jsoup.connect(url).timeout(dataFetchTime).userAgent("Mozilla/5.0").method(Connection.Method.GET)
                         .ignoreContentType(true).execute().body();
         }
-    }
-
-    private String parseConfluenceContent(Document doc) {
-        // Confluence-specific content extraction
-        // Try to find the main content area
-        String content = doc.select(".wiki-content").text();
-        if (content.isEmpty()) {
-            content = doc.select("#content").text();
-        }
-        if (content.isEmpty()) {
-            content = doc.body().text();
-        }
-        return content;
-    }
-
-    private List<String> findChildPageLinks(String baseUrl) throws IOException {
-        List<String> childUrls = new ArrayList<>();
-        String pageId = extractParamFromUrl(baseUrl, "pageId");
-        if (pageId == null) {
-            return childUrls;
-        }
-
-        String apiUrl = buildAbsoluteUrl(baseUrl, String.format("/rest/api/content/%s/child/page?limit=100", pageId));
-        String response = fetchStringWithAuth(apiUrl);
-
-        List<JSONObject> list = JSON.parseObject(response).getJSONArray("results").toJavaList(JSONObject.class);
-        log.info("pageId({}) find {} child links", pageId, list.size());
-        for (JSONObject obj : list) {
-            String childPageId = obj.getString("id");
-            String childPageUrl =
-                    buildAbsoluteUrl(baseUrl, String.format("/pages/viewpage.action?pageId=%s", childPageId));
-            childUrls.add(childPageUrl);
-        }
-        return childUrls;
     }
 
     private String extractParamFromUrl(String url, String paramName) {

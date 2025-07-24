@@ -1,5 +1,10 @@
 const API_BASE_URL = "http://127.0.0.1:8080";
-const {createApp, ref, onMounted, watch, nextTick} = Vue;
+const {createApp, ref, onMounted, watch, nextTick, onUnmounted} = Vue;
+
+function createItalicText(dataStr) {
+    const style = 'color:#6a5acd; font-style:italic; border-left:3px solid #6a5acd; padding-left:8px;';
+    return `<br><i style="${style}">${dataStr}</i></br>`;
+}
 
 createApp({
     setup() {
@@ -7,25 +12,81 @@ createApp({
         const messages = ref([]);
         const inputMsg = ref('');
         const isLoading = ref(false);
+        const userScrollLock = ref(false);
+        let scrollObserver = null;
 
-        const scrollToBottom = () => {
+        const scrollToBottom = (force = false) => {
             nextTick(() => {
-                if (messageContainer.value) {
+                if (!messageContainer.value) return;
+                if (force || !userScrollLock.value) {
                     messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-                    console.log('Scroll to bottom triggered');
                 }
             });
         };
 
-        watch(messages, scrollToBottom);
+        const setupScrollObserver = () => {
+            if (!messageContainer.value) return;
 
-        watch(isLoading, (newVal) => {
-            if (!newVal) {
-                scrollToBottom();
+            const options = {
+                root: null,
+                threshold: 0.9,
+                rootMargin: "0px 0px -100px 0px"
+            };
+
+            scrollObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.target === messageContainer.value) {
+                        userScrollLock.value = !entry.isIntersecting;
+                    }
+                });
+            }, options);
+
+            scrollObserver.observe(messageContainer.value);
+        };
+
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        const handleSpecialContent = (message, data) => {
+            let html = '';
+            switch (data.type) {
+                case 'code':
+                    html = `<pre style="margin-top: 7px"><code class="language-${data.language}">${escapeHtml(data.content)}</code></pre>`;
+                    break;
+                case 'image':
+                    html = `<img src="${data.content}" class="max-w-full h-auto rounded-lg" style="max-height:300px; margin-top: 7px">`;
+                    break;
+                case 'table':
+                    let theadData = data.data;
+                    let table = '<div class="table-container"><table class="custom-table" style="margin-top: 7px">';
+                    table += '<thead><tr>';
+                    for (let j = 0; j < data.cols; j++) {
+                        table += `<td>${escapeHtml(theadData[0][j])}</td>`;
+                    }
+                    table += '</tr></thead><tbody>';
+                    for (let i = 1; i < data.rows; i++) {
+                        table += '<tr>';
+                        for (let j = 0; j < data.cols; j++) {
+                            table += `<td>${escapeHtml(theadData[i][j])}</td>`;
+                        }
+                        table += '</tr>';
+                    }
+                    table += '</tbody></table></div>';
+                    html = table;
+                    break;
+                case 'link':
+                    const displayText = data.webText || data.content;
+                    html = `<a href="${escapeHtml(data.content)}" target="_blank" class="text-blue-500 hover:underline" style="margin-top: 7px">${escapeHtml(displayText)}</a>`;
+                    break;
+                default:
+                    html = escapeHtml(data.content);
             }
-        });
-
-        onMounted(scrollToBottom);
+            message.content += html;
+            message.isHtml = true;
+        };
 
         const sendMessage = async () => {
             if (!inputMsg.value.trim()) return;
@@ -33,67 +94,54 @@ createApp({
             const userMessage = {
                 role: 'user',
                 content: inputMsg.value,
-                time: new Date().toTimeString().slice(0, 5)
+                time: new Date().toTimeString().slice(0, 5),
+                isHtml: false
             };
             messages.value.push(userMessage);
             inputMsg.value = '';
+            scrollToBottom(true);
 
             try {
                 isLoading.value = true;
-
                 const assistantMessage = {
                     role: 'assistant',
                     content: '',
                     displayContent: '',
-                    time: new Date().toTimeString().slice(0, 5)
+                    time: new Date().toTimeString().slice(0, 5),
+                    isHtml: false
                 };
 
                 const response = await fetch(API_BASE_URL + '/ling/dialog', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        messages: messages.value
-                    })
+                    body: JSON.stringify({messages: messages.value})
                 });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP 错误: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
                 const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-                let accumulated = '';
-                let typingTimer = null;
+                const decoder = new TextDecoder();
+                let buffer = '';
                 let assistantAdded = false;
-
-                const typeNextChar = () => {
-                    if (assistantMessage.content.length > assistantMessage.displayContent.length) {
-                        assistantMessage.displayContent += assistantMessage.content[assistantMessage.displayContent.length];
-                        messages.value = [...messages.value];
-                        typingTimer = setTimeout(typeNextChar, 50);
-                    }
-                };
 
                 while (true) {
                     const {done, value} = await reader.read();
                     if (done) break;
 
-                    accumulated += decoder.decode(value);
-                    const lines = accumulated.split('\n');
-                    accumulated = lines.pop() || '';
+                    buffer += decoder.decode(value, {stream: true});
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (!trimmed) continue;
-
-                        if (trimmed.startsWith('data: ')) {
-                            const dataStr = trimmed.slice(6);
+                        if (!line.trim()) continue;
+                        if (line.startsWith('data: ')) {
+                            const dataStr = line.substring(6).trim();
                             if (dataStr === '[DONE]') continue;
 
                             try {
                                 const data = JSON.parse(dataStr);
                                 let content = data.choices?.[0]?.delta?.content || '';
-                                const endTagIndex = content.indexOf('think>', content);
+                                const endTagIndex = content.indexOf('think>');
                                 if (endTagIndex !== -1) {
                                     content = content.substring(endTagIndex + 6);
                                 }
@@ -104,36 +152,72 @@ createApp({
                                 }
 
                                 assistantMessage.content += content;
-                                if (assistantAdded && !typingTimer) {
-                                    typeNextChar();
+                                if (assistantAdded) {
+                                    assistantMessage.displayContent = assistantMessage.content;
+                                    messages.value = [...messages.value];
+                                    scrollToBottom();
                                 }
                             } catch (e) {
-                                console.error('解析失败:', e);
+                                console.error('Data parse error:', e);
+                            }
+                        } else if (line.startsWith('added: ')) {
+                            const dataStr = line.substring(7);
+                            if (!assistantAdded) {
+                                messages.value.push(assistantMessage);
+                                assistantAdded = true;
+                            }
+
+                            assistantMessage.content += createItalicText(dataStr);
+                            assistantMessage.isHtml = true;
+                            if (assistantAdded) {
+                                assistantMessage.displayContent = assistantMessage.content;
+                                messages.value = [...messages.value];
+                                scrollToBottom();
+                            }
+                        } else if (line.startsWith('link: ')) {
+                            const dataStr = line.substring(6).trim();
+                            if (dataStr === '[DONE]') continue;
+                            try {
+                                const data = JSON.parse(dataStr);
                                 if (!assistantAdded) {
                                     messages.value.push(assistantMessage);
                                     assistantAdded = true;
                                 }
-                                assistantMessage.content += dataStr;
-                                if (!typingTimer) {
-                                    typeNextChar();
-                                }
+                                handleSpecialContent(assistantMessage, data);
+                                messages.value = [...messages.value];
+                                scrollToBottom();
+                            } catch (e) {
+                                console.error('Link parse error:', e);
                             }
                         }
                     }
                 }
             } catch (error) {
-                console.error('发送消息失败:', error);
+                console.error('Request failed:', error);
             } finally {
                 isLoading.value = false;
+                scrollToBottom(true);
             }
         };
+
+        onMounted(() => {
+            setupScrollObserver();
+            scrollToBottom(true);
+        });
+
+        onUnmounted(() => {
+            if (scrollObserver) scrollObserver.disconnect();
+        });
+
+        watch(messages, () => scrollToBottom());
+        watch(isLoading, (val) => !val && scrollToBottom());
 
         return {
             messageContainer,
             messages,
             inputMsg,
-            sendMessage,
-            isLoading
+            isLoading,
+            sendMessage
         };
     }
 }).mount('#app');

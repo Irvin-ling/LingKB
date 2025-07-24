@@ -6,6 +6,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.4.27/dist/vue.global.prod.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
     <title>灵知库助手</title>
     <script>
         tailwind.config = {
@@ -77,10 +79,11 @@
 
                 <!-- 消息气泡 -->
                 <div class="max-w-[80%] p-3 rounded-lg shadow-sm transition-all duration-300" :class="{
-                 'bg-primary/10 text-primary dark:bg-primary/20': msg.role === 'user', 
-                 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200': msg.role === 'assistant' 
-               }">
-                    <p class="text-sm break-words">{{ msg.content }}</p>
+             'bg-primary/10 text-primary dark:bg-primary/20': msg.role === 'user',
+             'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200': msg.role === 'assistant'
+           }">
+                    <div v-if="msg.isHtml" class="text-sm break-words" v-html="msg.content"></div>
+                    <p v-else class="text-sm break-words">{{ msg.content }}</p>
                     <p class="text-right text-xs text-gray-500 mt-1">{{ msg.time }}</p>
                 </div>
             </div>

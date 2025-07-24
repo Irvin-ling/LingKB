@@ -1,0 +1,317 @@
+/* 基础表格容器样式 */
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* 适配小屏幕横向滚动 */
+    margin: 1rem 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 表格整体样式 */
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden; /* 配合容器圆角 */
+}
+
+/* 表头样式 */
+.custom-table thead {
+    background-color: #4aafff; /* 浅灰底色 */
+    color: #333;
+    font-weight: 600;
+}
+
+.custom-table thead tr {
+    border-bottom: 2px solid #ff35c8; /* 表头底部分隔线 */
+}
+
+.custom-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+    white-space: nowrap; /* 表头文字不换行 */
+}
+
+/* 表格内容行样式 */
+.custom-table tbody tr {
+    border-bottom: 1px solid #f0f2f5; /* 行分隔线 */
+    transition: background-color 0.2s ease; /* hover过渡效果 */
+}
+
+/* 行hover效果 */
+.custom-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* 单元格样式 */
+.custom-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #4e5969;
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* 隔行变色（可选） */
+.custom-table tbody tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+/* 单元格内容超出显示省略号（可选） */
+.custom-table td.ellipsis {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 表格内图标样式（配合Font Awesome） */
+.custom-table td .fa {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+/* 代码块容器 */
+pre {
+    margin: 1rem 0;
+    border-radius: 6px;
+    background-color: #f8f9fa; /* 浅灰背景 */
+    border: 1px solid #e5e9f2;
+    overflow-x: auto; /* 长代码横向滚动 */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+/* 代码内容 */
+pre code {
+    display: block;
+    padding: 1rem;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre; /* 保留空格和换行 */
+}
+
+/* 代码块悬停效果 */
+pre:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-color: #d0d7e3;
+}
+
+/* 行号样式（可选） */
+pre.line-numbers {
+    position: relative;
+    padding-left: 3.8em;
+    counter-reset: linenumber;
+}
+
+pre.line-numbers code {
+    position: relative;
+    z-index: 1;
+}
+
+pre.line-numbers .line-numbers-rows {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2.8em;
+    border-right: 1px solid #e5e9f2;
+    background-color: #f0f2f5;
+    pointer-events: none;
+    counter-reset: linenumber;
+}
+
+pre.line-numbers .line-numbers-rows > span {
+    display: block;
+    counter-increment: linenumber;
+}
+
+pre.line-numbers .line-numbers-rows > span:before {
+    content: counter(linenumber);
+    display: block;
+    padding-right: 0.8em;
+    text-align: right;
+    color: #999;
+    font-size: 12px;
+}
+
+/* 语法高亮 - 关键字 */
+code .keyword {
+    color: #0070c9;
+    font-weight: bold;
+}
+
+/* 语法高亮 - 字符串 */
+code .string {
+    color: #008000;
+}
+
+/* 语法高亮 - 注释 */
+code .comment {
+    color: #6a737d;
+    font-style: italic;
+}
+
+/* 语法高亮 - 数字 */
+code .number {
+    color: #d14;
+}
+
+/* 语法高亮 - 函数 */
+code .function {
+    color: #6f42c1;
+}
+
+/* 代码块基础样式 */
+pre {
+    margin: 1rem 0;
+    border-radius: 6px;
+    background-color: #f8fafc;
+    border: 1px solid #e5e7eb;
+    overflow-x: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+pre code {
+    display: block;
+    padding: 1rem;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+pre:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+}
+
+/* 语言特定背景色 */
+pre.language-java {
+    background-color: #fdf6e3; /* Java - 暖色调 */
+}
+
+pre.language-js {
+    background-color: #fff9e6; /* JavaScript - 浅黄色 */
+}
+
+pre.language-python {
+    background-color: #e8f4f8; /* Python - 浅蓝色 */
+}
+
+pre.language-cpp {
+    background-color: #f5f5f5; /* C++ - 中性灰 */
+}
+
+pre.language-html {
+    background-color: #fff0f0; /* HTML - 浅粉色 */
+}
+
+/* 语法高亮 - 通用规则 */
+code .keyword {
+    font-weight: bold;
+}
+
+code .string {
+    color: #008000;
+}
+
+code .comment {
+    color: #6a737d;
+    font-style: italic;
+}
+
+code .number {
+    color: #d14;
+}
+
+code .function {
+    color: #6f42c1;
+}
+
+code .operator {
+    color: #000;
+}
+
+code .punctuation {
+    color: #333;
+}
+
+/* 语法高亮 - 各语言特定规则 */
+
+/* Java 高亮 */
+pre.language-java code .keyword {
+    color: #0070c9;
+}
+
+pre.language-java code .annotation {
+    color: #9c27b0;
+}
+
+pre.language-java code .class-name {
+    color: #4a6785;
+    font-weight: bold;
+}
+
+/* JavaScript 高亮 */
+pre.language-js code .keyword {
+    color: #d35400;
+}
+
+pre.language-js code .builtin {
+    color: #2980b9;
+}
+
+pre.language-js code .class-name {
+    color: #8e44ad;
+    font-weight: bold;
+}
+
+/* Python 高亮 */
+pre.language-python code .keyword {
+    color: #2c3e50;
+}
+
+pre.language-python code .decorator {
+    color: #c0392b;
+}
+
+pre.language-python code .class-name {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+/* C++ 高亮 */
+pre.language-cpp code .keyword {
+    color: #8e44ad;
+}
+
+pre.language-cpp code .preprocessor {
+    color: #d35400;
+}
+
+pre.language-cpp code .class-name {
+    color: #2980b9;
+    font-weight: bold;
+}
+
+/* HTML 高亮 */
+pre.language-html code .tag {
+    color: #e74c3c;
+}
+
+pre.language-html code .attr-name {
+    color: #f39c12;
+}
+
+pre.language-html code .attr-value {
+    color: #2ecc71;
+}
+
+pre.language-html code .doctype {
+    color: #95a5a6;
+}

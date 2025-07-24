@@ -1,5 +1,6 @@
 package com.ling.lingkb.llm.client;
 
+import com.ling.lingkb.entity.LingDocumentLink;
 import com.ling.lingkb.entity.LingVector;
 import com.ling.lingkb.global.SoleMapper;
 import io.github.jbellis.jvector.disk.ReaderSupplier;
@@ -47,6 +48,8 @@ public class VectorStoreClient {
     private String vectorDataPath;
     @Value("${vector.bak.path}")
     private String vectorBakPath;
+    @Value("${vector.link.path}")
+    private String vectorLinkPath;
     @Value("${vector.default.dimension}")
     private int vectorDefaultDimension;
     @Value("${vector.search.top}")
@@ -58,6 +61,8 @@ public class VectorStoreClient {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private OnDiskGraphIndex diskIndex;
     private MutableVectorValues vectorValues;
+    private OnDiskGraphIndex linkDiskIndex;
+    private MutableVectorValues linkVectorValues;
     private AtomicBoolean consistent = new AtomicBoolean(true);
 
     @Resource
@@ -71,7 +76,6 @@ public class VectorStoreClient {
             vectorValues = new MutableVectorValues(vectorDefaultDimension);
             List<LingVector> lingVectors = soleMapper.queryAllVector(workspace);
             vectorValues.addAll(lingVectors);
-
             if (vectorValues.size() > 0) {
                 BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(vectorValues, COSINE);
                 try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
@@ -87,8 +91,8 @@ public class VectorStoreClient {
                         Files.move(dataPath, bakPath, StandardCopyOption.REPLACE_EXISTING);
                     }
                     OnHeapGraphIndex heapIndex = builder.build(vectorValues);
-                    OnDiskGraphIndex.write(heapIndex, vectorValues, Path.of(vectorDataPath));
-                    ReaderSupplier rs = ReaderSupplierFactory.open(Path.of(vectorDataPath));
+                    OnDiskGraphIndex.write(heapIndex, vectorValues, dataPath);
+                    ReaderSupplier rs = ReaderSupplierFactory.open(dataPath);
                     diskIndex = OnDiskGraphIndex.load(rs);
                 } catch (IOException e) {
                     log.error("Failed to create index", e);
@@ -96,13 +100,32 @@ public class VectorStoreClient {
             } else {
                 diskIndex = null;
             }
+
+            linkVectorValues = new MutableVectorValues(vectorDefaultDimension);
+            List<LingDocumentLink> links = soleMapper.queryLinkVectors(workspace);
+            linkVectorValues.addLinks(links);
+            if (linkVectorValues.size() > 0) {
+                BuildScoreProvider bsp = BuildScoreProvider.randomAccessScoreProvider(linkVectorValues, COSINE);
+                try (GraphIndexBuilder builder = new GraphIndexBuilder(bsp, vectorDefaultDimension, 16, 100, 1.2f, 1.2f,
+                        false, true)) {
+                    Path linkPath = Path.of(vectorLinkPath);
+                    OnHeapGraphIndex heapIndex = builder.build(linkVectorValues);
+                    OnDiskGraphIndex.write(heapIndex, linkVectorValues, linkPath);
+                    ReaderSupplier rs = ReaderSupplierFactory.open(linkPath);
+                    linkDiskIndex = OnDiskGraphIndex.load(rs);
+                } catch (IOException e) {
+                    log.error("Failed to create index", e);
+                }
+            } else {
+                linkDiskIndex = null;
+            }
             consistent.set(true);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    @Scheduled(fixedRate = 60_000)
+    @Scheduled(fixedRate = 300_000)
     public void persistedSave() {
         lock.writeLock().lock();
         try {
@@ -135,17 +158,45 @@ public class VectorStoreClient {
     }
 
     private List<String> queryVectorTxt(SearchResult sr) {
-        List<Integer> nodeIds = new ArrayList<>();
-        for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
-            if (nodeScore.score >= vectorSearchScore) {
-                System.out.println(nodeScore.score);
-                nodeIds.add(nodeScore.node);
-            }
-        }
+        List<Integer> nodeIds = getNodeIds(sr);
         if (nodeIds.isEmpty()) {
             return new ArrayList<>();
         } else {
             return soleMapper.queryVectorTxtByNodeIds(workspace, nodeIds);
+        }
+    }
+
+    private LingDocumentLink queryLink(SearchResult sr) {
+        List<Integer> nodeIds = getNodeIds(sr);
+        if (nodeIds.isEmpty()) {
+            return null;
+        } else {
+            return soleMapper.queryLink(workspace, nodeIds.get(0));
+        }
+    }
+
+    private List<Integer> getNodeIds(SearchResult sr) {
+        List<Integer> nodeIds = new ArrayList<>();
+        for (SearchResult.NodeScore nodeScore : sr.getNodes()) {
+            if (nodeScore.score >= vectorSearchScore) {
+                nodeIds.add(nodeScore.node);
+            }
+        }
+        return nodeIds;
+    }
+
+    public LingDocumentLink searchLink(float[] query) {
+        lock.readLock().lock();
+        try {
+            if (linkDiskIndex == null) {
+                return null;
+            }
+            VectorFloat<?> queryVector = VTS.createFloatVector(query);
+            SearchResult sr =
+                    GraphSearcher.search(queryVector, 1, linkVectorValues, COSINE, linkDiskIndex, Bits.ALL);
+            return queryLink(sr);
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
@@ -191,6 +242,17 @@ public class VectorStoreClient {
         void addAll(List<LingVector> lingVectors) {
             for (LingVector lingVector : lingVectors) {
                 float[] vector = stringToFloats(lingVector.getVector());
+                if (vector.length != dimension) {
+                    throw new IllegalArgumentException(
+                            String.format("Vector dimension mismatch. Expected %d, got %d", dimension, vector.length));
+                }
+                vectors.add(VTS.createFloatVector(vector));
+            }
+        }
+
+        void addLinks(List<LingDocumentLink> links) {
+            for (LingDocumentLink link : links) {
+                float[] vector = stringToFloats(link.getDescVector());
                 if (vector.length != dimension) {
                     throw new IllegalArgumentException(
                             String.format("Vector dimension mismatch. Expected %d, got %d", dimension, vector.length));
