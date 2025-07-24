@@ -126,16 +126,21 @@ public class AsyncDao {
         soleMapper.batchSaveVectors(vectorList);
     }
 
-    private void feedLinks(List<LingDocumentLink> links) {
+    private synchronized void feedLinks(List<LingDocumentLink> links) {
+
         if (links != null && !links.isEmpty()) {
+            links = links.stream().filter(lingDocumentLink -> !lingDocumentLink.getDescText().trim().isEmpty())
+                    .collect(Collectors.toList());
             List<String> descList = links.stream().map(LingDocumentLink::getDescText).collect(Collectors.toList());
-            List<float[]> descVectorList = embeddingClient.getEmbeddings(descList);
-            for (int i = 0; i < links.size(); i++) {
-                LingDocumentLink link = links.get(i);
-                float[] vector = descVectorList.get(i);
-                link.setDescVector(floatsToString(vector));
+            if (!descList.isEmpty()) {
+                List<float[]> descVectorList = embeddingClient.getEmbeddings(descList);
+                for (int i = 0; i < links.size(); i++) {
+                    LingDocumentLink link = links.get(i);
+                    float[] vector = descVectorList.get(i);
+                    link.setDescVector(floatsToString(vector));
+                }
+                soleMapper.batchSaveLinks(links);
             }
-            soleMapper.batchSaveLinks(links);
         }
     }
 

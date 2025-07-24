@@ -48,6 +48,8 @@ public class ConfluenceTreeParser implements DocumentParser {
     private int dataFetchTime;
     @Value("${data.parser.max.length}")
     private int dataMaxLength;
+    @Value("${data.parser.confluence.link}")
+    private boolean webLink;
     @Value("${data.page.break.symbols}")
     private String pageBreakSymbols;
 
@@ -141,8 +143,9 @@ public class ConfluenceTreeParser implements DocumentParser {
 
         visitedUrls.add(url);
         Document doc = fetchDocumentWithAuth(url);
-        Element element = findContentArea(doc);
+        String title = doc.title();
         LingDocument lingDocument = new LingDocument();
+        Element element = findContentArea(doc);
         log.info("successfully resolved: {}", url);
         lingDocument.setAuthor(getAuthor(doc));
         lingDocument.setCreationDate(0);
@@ -150,6 +153,7 @@ public class ConfluenceTreeParser implements DocumentParser {
         lingDocument.setCreationDate(System.currentTimeMillis());
         lingDocument.setPageCount(1);
         linkContentParse(lingDocument, element);
+        lingDocument.getLinks().forEach(link -> link.setDescText(title + "\n" + link.getDescText()));
         String currentContent = element.text();
         if (currentContent.length() > dataMaxLength) {
             log.warn("current file-{} content truncated due to size limit {}", doc.title(), dataMaxLength);
@@ -174,23 +178,30 @@ public class ConfluenceTreeParser implements DocumentParser {
         extractImages(links, element);
         extractCodes(links, element);
         extractTables(links, element);
-        extractWebLinks(lingDocument.getSourceFileName(), links, element);
+        if (webLink) {
+            extractWebLinks(lingDocument.getSourceFileName(), links, element);
+        }
         lingDocument.setLinks(links);
     }
 
     private void extractImages(List<LingDocumentLink> links, Element element) throws IOException {
         Elements images = element.select("img");
         for (Element image : images) {
-            LingDocumentLink link = new LingDocumentLink();
-            link.setType(0);
-            String imgDesc = getPreText(image, "img");
-            if (StringUtils.isNotBlank(imgDesc)) {
-                link.setDescText(imgDesc);
-                String absoluteUrl = image.absUrl("src");
-                byte[] imageBytes = fetchBytesWithAuth(absoluteUrl);
-                link.setContent(addBase64Header(imageBytes));
-                link.setContentAssistant(absoluteUrl);
-                links.add(link);
+            String imageClass = image.attr("class");
+            if (!imageClass.contains("logo")) {
+                LingDocumentLink link = new LingDocumentLink();
+                link.setType(0);
+                String imgDesc = getPreText(image, "img");
+                if (StringUtils.isNotBlank(imgDesc)) {
+                    link.setDescText(imgDesc);
+                    String absoluteUrl = image.absUrl("src");
+                    byte[] imageBytes = fetchBytesWithAuth(absoluteUrl);
+                    if(imageBytes != null) {
+                        link.setContent(addBase64Header(imageBytes));
+                        link.setContentAssistant(absoluteUrl);
+                        links.add(link);
+                    }
+                }
             }
             image.remove();
         }
@@ -293,7 +304,7 @@ public class ConfluenceTreeParser implements DocumentParser {
     private String getPreText(Element element, String selfTag) {
         String text = null;
         if (!StringUtils.equalsAnyIgnoreCase(element.tagName(), selfTag, "div")) {
-            text = element.text();
+            text = element.text().trim();
         }
         if (StringUtils.isBlank(text)) {
             Element preElement = element.previousElementSibling();
@@ -382,23 +393,27 @@ public class ConfluenceTreeParser implements DocumentParser {
         }
     }
 
-    private byte[] fetchBytesWithAuth(String url) throws IOException {
-        switch (authType) {
-            case BASIC:
-                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
-                        .header("Authorization", "Basic " +
-                                java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()))
-                        .execute().bodyAsBytes();
-            case COOKIE:
-                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
-                        .cookie("JSESSIONID", authToken).execute().bodyAsBytes();
-            case TOKEN:
-                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
-                        .header("Authorization", "Bearer " + authToken).execute().bodyAsBytes();
-            case NONE:
-            default:
-                return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
-                        .execute().bodyAsBytes();
+    private byte[] fetchBytesWithAuth(String url) {
+        try {
+            switch (authType) {
+                case BASIC:
+                    return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                            .header("Authorization", "Basic " +
+                                    java.util.Base64.getEncoder().encodeToString((username + ":" + password).getBytes()))
+                            .execute().bodyAsBytes();
+                case COOKIE:
+                    return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                            .cookie("JSESSIONID", authToken).execute().bodyAsBytes();
+                case TOKEN:
+                    return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                            .header("Authorization", "Bearer " + authToken).execute().bodyAsBytes();
+                case NONE:
+                default:
+                    return Jsoup.connect(url).timeout(dataFetchTime).ignoreContentType(true).userAgent("Mozilla/5.0")
+                            .execute().bodyAsBytes();
+            }
+        }catch (Exception e){
+            return null;
         }
     }
 

@@ -125,7 +125,7 @@ public class VectorStoreClient {
         }
     }
 
-    @Scheduled(fixedRate = 300_000)
+    @Scheduled(fixedRate = 600_000)
     public void persistedSave() {
         lock.writeLock().lock();
         try {

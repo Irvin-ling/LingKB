@@ -48,7 +48,17 @@ public interface SoleMapper {
     @InsertProvider(type = SqlWorkshop.class, method = "batchSaveVectors")
     void batchSaveVectors(List<LingVector> vectors);
 
-    @InsertProvider(type = SqlWorkshop.class, method = "batchSaveLinks")
+    @Insert({
+            "<script>",
+            "insert into `ling_document_link`",
+            "(`doc_id`, `workspace`, `type`, `content`, `content_assistant`, `desc_text`, `desc_vector`)",
+            "VALUES",
+            "<foreach collection='list' item='link' separator=','>",
+            "(#{link.docId}, #{link.workspace}, #{link.type}, ",
+            "#{link.content}, #{link.contentAssistant}, #{link.descText}, #{link.descVector})",
+            "</foreach>",
+            "</script>"
+    })
     void batchSaveLinks(List<LingDocumentLink> links);
 
     @SelectProvider(type = SqlWorkshop.class, method = "queryVectorTxtByNodeIds")
@@ -73,15 +83,6 @@ public interface SoleMapper {
                     .format("('%s', '%s', '%s', '%s', %s)", ve.getDocId(), ve.getWorkspace(), ve.getTxt(),
                             ve.getVector(), ve.isPersisted() ? 1 : 0)).collect(Collectors.joining(","));
             return "insert into `ling_vector` (`doc_id`, `workspace`, `txt`, `vector`, `persisted`) values " + content;
-        }
-
-        public String batchSaveLinks(List<LingDocumentLink> links) {
-            String content = links.stream().map(link -> String
-                    .format("('%s', '%s', %s, '%s', '%s', '%s', '%s')", link.getDocId(), link.getWorkspace(),
-                            link.getType(), link.getContent(), link.getContentAssistant(), link.getDescText(),
-                            link.getDescVector())).collect(Collectors.joining(","));
-            return "insert into `ling_document_link` (`doc_id`, `workspace`, `type`, `content`, " +
-                    "`content_assistant`, `desc_text`, `desc_vector`) values " + content;
         }
 
         public String queryVectorTxtByNodeIds(@Param("workspace") String workspace,

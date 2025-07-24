@@ -58,37 +58,43 @@ public class QwenClient {
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
+        System.out.println(requestJson);
 
-        restTemplate.execute(qwenUrl, HttpMethod.POST, request -> configureRequest(requestJson, request),
-                responseExtractor -> {
-                    writeResponse(response, lingDocumentLink, responseExtractor);
-                    return null;
-                });
-    }
-
-    private void configureRequest(JSONObject requestJson, ClientHttpRequest request) throws IOException {
-        request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        request.getHeaders().setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        if (requestJson != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            requestJson.put("temperature", qwenTemperature);
-            requestJson.put("stream", true);
-            JSONArray messages = requestJson.getJSONArray("messages");
-
-            if (!qwenThink && !"system".equals(messages.getJSONObject(0).getString("role"))) {
-                messages.add(0, noThinkMessage);
-                requestJson.put("messages", messages);
+        try {
+            restTemplate.execute(qwenUrl, HttpMethod.POST,
+                    request -> configureRequest(requestJson, request),
+                    responseExtractor -> {
+                        try {
+                            writeResponse(response, lingDocumentLink, responseExtractor);
+                        } finally {
+                            try {
+                                responseExtractor.close();
+                            } catch (Exception e) {
+                                log.warn("Error closing response", e);
+                            }
+                        }
+                        return null;
+                    });
+            System.out.println(1);
+        } catch (Exception e) {
+            log.error("Error in fetchStreamData", e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            try {
+                PrintWriter writer = response.getWriter();
+                writer.write("data: {\"error\":\"request failed\"}\n\n");
+                writer.flush();
+            } catch (IOException ex) {
+                log.error("Error writing error response", ex);
             }
-            mapper.writeValue(request.getBody(), requestJson);
         }
     }
 
     private void writeResponse(HttpServletResponse response, LingDocumentLink lingDocumentLink,
-                               ClientHttpResponse responseExtractor) {
+                               ClientHttpResponse responseExtractor) throws IOException {
         try (InputStream is = responseExtractor.getBody();
-             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+             PrintWriter writer = response.getWriter()) {
 
-            PrintWriter writer = response.getWriter();
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("data: ")) {
@@ -109,15 +115,23 @@ public class QwenClient {
                 writer.write("link: " + toLinkJson(lingDocumentLink) + "\n\n");
                 writer.flush();
             }
-        } catch (IOException e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            try (PrintWriter writer = response.getWriter()) {
-                writer.write("data: {\"error\":\"stream interrupted\"}\n\n");
-                writer.flush();
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        }
+    }
+
+    private void configureRequest(JSONObject requestJson, ClientHttpRequest request) throws IOException {
+        request.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        request.getHeaders().setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        if (requestJson != null) {
+            ObjectMapper mapper = new ObjectMapper();
+            requestJson.put("temperature", qwenTemperature);
+            requestJson.put("stream", true);
+            JSONArray messages = requestJson.getJSONArray("messages");
+
+            if (!qwenThink && !"system".equals(messages.getJSONObject(0).getString("role"))) {
+                messages.add(0, noThinkMessage);
+                requestJson.put("messages", messages);
             }
-            log.error("Stream error", e);
+            mapper.writeValue(request.getBody(), requestJson);
         }
     }
 

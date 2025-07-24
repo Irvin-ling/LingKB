@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Component;
  * @version 1.0.0
  * @since 2025/7/17
  */
+@Slf4j
 @Component
 public class DataFeeder {
     @Value("${system.workspace}")
@@ -57,6 +60,7 @@ public class DataFeeder {
         Files.deleteIfExists(filePath);
     }
 
+    @Async
     public String feed(String url, String type) throws Exception {
         List<LingDocument> lingDocuments = parserFactory.parseUrl(url, type);
         lingDocuments.forEach(lingDocument -> processAndExtract(lingDocument, createDocId()));
@@ -64,19 +68,25 @@ public class DataFeeder {
     }
 
     private void processAndExtract(LingDocument lingDocument, String docId) {
-        lingDocument = processorFactory.process(lingDocument);
-        lingDocument = languageExtractor.doExtract(lingDocument);
-        lingDocument.setDocId(docId);
-        lingDocument.setWorkspace(workspace);
-        List<LingDocumentLink> links = lingDocument.getLinks();
-        if(links != null && !links.isEmpty()) {
-            for (LingDocumentLink link : links) {
-                link.setDocId(docId);
-                link.setWorkspace(workspace);
+        try {
+            if (!lingDocument.getText().trim().isEmpty()) {
+                lingDocument = processorFactory.process(lingDocument);
+                lingDocument = languageExtractor.doExtract(lingDocument);
+                lingDocument.setDocId(docId);
+                lingDocument.setWorkspace(workspace);
+                List<LingDocumentLink> links = lingDocument.getLinks();
+                if (links != null && !links.isEmpty()) {
+                    for (LingDocumentLink link : links) {
+                        link.setDocId(docId);
+                        link.setWorkspace(workspace);
+                    }
+                }
+                soleMapper.saveDocument(lingDocument);
+                asyncDao.feed(lingDocument);
             }
+        } catch (Exception e) {
+            log.error("发生错误", e);
         }
-        soleMapper.saveDocument(lingDocument);
-        asyncDao.feed(lingDocument);
     }
 
     public List<LingDocument> getDocIdList() {

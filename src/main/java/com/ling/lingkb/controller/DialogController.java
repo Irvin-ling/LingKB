@@ -44,6 +44,7 @@ public class DialogController {
     @PostMapping(value = "/dialog", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public void dialog(@RequestBody JSONObject json, HttpServletResponse response) {
         JSONArray messages = json.getJSONArray("messages");
+        messages.remove(messages.size() - 2);
         JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
         String question = lastJson.getString("content");
         float[] query = embeddingClient.getEmbedding(question);
