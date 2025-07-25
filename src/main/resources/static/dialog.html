@@ -51,12 +51,14 @@
     <!-- 左侧工具列 -->
     <div class="w-30 bg-gray-200 p-4 flex flex-col space-y-4">
         <div class="flex flex-wrap gap-2">
-        <span data-tag="translate" class="px-3 py-1 rounded-full text-sm cursor-pointer transition-all bg-gray-300 text-gray-700"
+        <span data-tag="translate"
+              class="px-3 py-1 rounded-full text-sm cursor-pointer transition-all bg-gray-300 text-gray-700"
               onclick="translateText(this, 'zh2En')">
             <i class="fa fa-language mr-1"></i><p>中译英</p></span>
         </div>
         <div class="flex flex-wrap gap-2">
-        <span data-tag="translate" class="px-3 py-1 rounded-full text-sm cursor-pointer transition-all bg-gray-300 text-gray-700"
+        <span data-tag="translate"
+              class="px-3 py-1 rounded-full text-sm cursor-pointer transition-all bg-gray-300 text-gray-700"
               onclick="translateText(this, 'en2Zh')">
             <i class="fa fa-language mr-1"></i><p>英译中</p></span>
         </div>
@@ -93,13 +95,25 @@
                     </div>
 
                     <!-- 消息气泡 -->
-                    <div class="max-w-[80%] p-3 rounded-lg shadow-sm transition-all duration-300" :class="{
+                    <div class="max-w-[80%] p-3 rounded-lg shadow-sm transition-all duration-300 relative" :class="{
              'bg-primary/10 text-primary dark:bg-primary/20': msg.role === 'user',
              'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200': msg.role === 'assistant'
            }">
                         <div v-if="msg.isHtml" class="text-sm break-words" v-html="msg.content"></div>
                         <p v-else class="text-sm break-words">{{ msg.content }}</p>
-                        <p class="text-right text-xs text-gray-500 mt-1">{{ msg.time }}</p>
+                        <div class="flex justify-between">
+                            <p class="text-right text-xs text-gray-500 mt-1">{{ msg.time }}</p>
+
+                            <!-- 消息操作按钮 -->
+                            <div class="text-left text-xs text-gray-500 mt-1">
+                                <button @click="copyMessage(msg.content)" class="p-1 text-gray-500 hover:text-primary">
+                                    <i class="fas fa-copy text-xs"></i>
+                                </button>
+                                <button @click="showFullMessage(msg)" class="p-1 text-gray-500 hover:text-primary">
+                                    <i class="fas fa-expand text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -132,6 +146,26 @@
                     class="ml-3 bg-primary text-white px-5 py-3 rounded-lg hover:bg-primary/90 transition flex items-center">
                 <i class="fa fa-paper-plane mr-1"></i> 发送
             </button>
+        </div>
+
+        <!-- 消息放大模态框 -->
+        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-3xl w-full max-h-[80vh] overflow-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold">{{ modalTitle }}</h3>
+                    <button @click="showModal = false" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div v-if="modalIsHtml" class="text-sm break-words" v-html="modalContent"></div>
+                <pre v-else class="text-sm break-words whitespace-pre-wrap">{{ modalContent }}</pre>
+                <div class="mt-4 flex justify-end">
+                    <button @click="copyMessage(modalContent)"
+                            class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90">
+                        <i class="fas fa-copy mr-1"></i> 复制
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

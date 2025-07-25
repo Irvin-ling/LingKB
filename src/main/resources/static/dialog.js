@@ -47,6 +47,10 @@ createApp({
         const inputMsg = ref('');
         const isLoading = ref(false);
         const userScrollLock = ref(false);
+        const showModal = ref(false);
+        const modalContent = ref('');
+        const modalTitle = ref('');
+        const modalIsHtml = ref(false);
         let scrollObserver = null;
 
         const scrollToBottom = (force = false) => {
@@ -82,6 +86,42 @@ createApp({
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        };
+
+        const copyMessage = (content) => {
+            // 创建一个临时textarea元素来复制纯文本
+            content = content.replace(/[\r\n\u2028\u2029]/g, '');
+            const textarea = document.createElement('textarea');
+            // 如果是HTML内容，我们需要提取纯文本
+            if (typeof content === 'string' && content.includes('<')) {
+                const div = document.createElement('div');
+                div.innerHTML = content;
+                textarea.value = div.textContent || div.innerText || '';
+            } else {
+                textarea.value = content;
+            }
+
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            // 显示复制成功的提示
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
+            notification.textContent = '已复制到剪贴板';
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 2000);
+        };
+
+        const showFullMessage = (msg) => {
+            modalContent.value = msg.content;
+            modalTitle.value = msg.role === 'user' ? '我的消息' : '助手回复';
+            modalIsHtml.value = msg.isHtml;
+            showModal.value = true;
         };
 
         const handleSpecialContent = (message, data) => {
@@ -256,6 +296,12 @@ createApp({
             messages,
             inputMsg,
             isLoading,
+            showModal,
+            modalContent,
+            modalTitle,
+            modalIsHtml,
+            copyMessage,
+            showFullMessage,
             sendMessage
         };
     }
