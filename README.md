@@ -1,7 +1,9 @@
 # LingKB-灵知识库项目文档
 
 ## 一、项目简介
-本项目是一个基于Java 11环境的企业知识库系统，采用Spring Boot框架搭建，使用MySQL存储数据，结合JVector向量检索库和HanLP自然语言处理库构建。系统外接Qwen3轻量级大语言模型和向量嵌入模型，能够实现知识的高效存储、检索和智能问答功能。
+本项目是一个基于Java 11环境的企业知识库系统，采用Spring Boot框架搭建，使用MySQL存储数据，结合JVector向量检索库和HanLP自然语言处理库构建。
+系统外接Qwen3轻量级大语言模型和向量嵌入模型，能够实现知识的高效存储、检索和智能问答功能。
+开发初衷是在Java的技术生态下，以最简洁直接的逻辑链、最低的成本实现企业知识库的落地 —— 在熟悉或易上手的技术架构下，快速地搭建好用的知识体系。
 
 系统包含两大核心流程：
 - 知识入库流程：处理各类文档，提取内容并转换为向量存储
@@ -26,7 +28,8 @@ spring.datasource.url=jdbc:mysql://mysql_host:mysql_port/your_database
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
-### 2.3 大语言模型服务部署（Qwen3）
+### 2.3 大语言模型服务部署（以 Qwen3 为例）
+> **提示**：若选择直接调用在线的外部大语言模型服务，可跳过本章节。
 1. 下载模型服务包：从[Hugging Face](https://huggingface.co/Mozilla/Qwen3-0.6B-llamafile/tree/main)获取轻量级语言模型
 2. 启动服务（建议在Linux环境下运行）：
 ```bash
@@ -56,8 +59,13 @@ chmod +x Qwen_Qwen3-0.6B-Q8_0.llamafile
 ```
 
 ### 2.5 系统配置
-编辑`application.properties`文件，配置以下关键参数（eg提供了参考值）：
+编辑`application.properties`文件，配置以下关键参数（eg. 提供了参考值）：
+> **提示**：其中可以从[tessdata](https://huggingface.co/spaces/Orkhan/image2text_ocr/tree/main/Tesseract-OCR/tessdata)
+下载chi_sim.traineddata、chi_sim_vert.traineddata、eng.traineddata等文件，并放置在${data.parser.tess.path}文件夹下。application.properties文件中的其他参数可保持默认值，或根据实际需求调整
 ```properties
+#### OCR识别引擎路径
+data.parser.tess.path=D:/tessdata/
+
 #### 文件上传路径
 system.upload.file.dir=D:/knowledge_files/
 
@@ -69,12 +77,8 @@ qwen.chat.url=http://localhost:6666/v1/chat/completions
 vector.data.path=D:/temp/vector/data.hnsw
 vector.link.path=D:/temp/vector/link.hnsw
 vector.bak.path=D:/temp/vector/data.bak
-
-#### OCR识别引擎路径
-data.parser.tess.path=D:/tessdata/
 ```
-从[tessdata](https://huggingface.co/spaces/Orkhan/image2text_ocr/tree/main/Tesseract-OCR/tessdata)下载chi_sim.traineddata、chi_sim_vert.traineddata、eng.traineddata等文件后放置在${data.parser.tess.path}文件夹下。
-其他参数可保持默认值，或根据实际需求调整
+
 
 ## 三、参与贡献
 欢迎参与项目开发或反馈使用问题，联系方式：
