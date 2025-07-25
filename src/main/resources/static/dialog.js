@@ -6,10 +6,44 @@ function createItalicText(dataStr) {
     return `<br><i style="${style}">${dataStr}</i></br>`;
 }
 
+let translationTag = null;
+
+function translateText(element, tag) {
+    if (translationTag === null) {
+        translationTag = tag;
+        selected(element);
+    } else if (translationTag === tag) {
+        translationTag = null;
+        unselected(element);
+    } else {
+        const elements = document.querySelectorAll('span[data-tag="translate"]');
+        elements.forEach(element => {
+            unselected(element);
+        });
+        translationTag = tag;
+        selected(element);
+    }
+}
+
+function selected(element) {
+    element.classList.remove('bg-gray-300', 'text-gray-700');
+    element.classList.add('bg-primary', 'text-white', 'scale-105');
+    element.classList.add('animate-select');
+    setTimeout(() => element.classList.remove('animate-select'), 300);
+}
+
+function unselected(element) {
+    element.classList.remove('bg-primary', 'text-white', 'scale-105');
+    element.classList.add('bg-gray-300', 'text-gray-700');
+    element.classList.add('animate-unselect');
+    setTimeout(() => element.classList.remove('animate-unselect'), 300);
+}
+
 createApp({
     setup() {
         const messageContainer = ref(null);
         const messages = ref([]);
+        const sdMessages = ref([]);
         const inputMsg = ref('');
         const isLoading = ref(false);
         const userScrollLock = ref(false);
@@ -91,6 +125,10 @@ createApp({
         const sendMessage = async () => {
             if (!inputMsg.value.trim()) return;
 
+            const tags = {
+                translation: translationTag
+            };
+
             const userMessage = {
                 role: 'user',
                 content: inputMsg.value,
@@ -98,6 +136,7 @@ createApp({
                 isHtml: false
             };
             messages.value.push(userMessage);
+            sdMessages.value.push(userMessage);
             inputMsg.value = '';
             scrollToBottom(true);
 
@@ -106,7 +145,6 @@ createApp({
                 const assistantMessage = {
                     role: 'assistant',
                     content: '',
-                    displayContent: '',
                     time: new Date().toTimeString().slice(0, 5),
                     isHtml: false
                 };
@@ -114,7 +152,7 @@ createApp({
                 const response = await fetch(API_BASE_URL + '/ling/dialog', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({messages: messages.value})
+                    body: JSON.stringify({messages: sdMessages.value, chatTag: tags})
                 });
 
                 if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -148,12 +186,12 @@ createApp({
 
                                 if (!assistantAdded && content) {
                                     messages.value.push(assistantMessage);
+                                    sdMessages.value.push(JSON.parse(JSON.stringify(assistantMessage)));
                                     assistantAdded = true;
                                 }
 
                                 assistantMessage.content += content;
                                 if (assistantAdded) {
-                                    assistantMessage.displayContent = assistantMessage.content;
                                     messages.value = [...messages.value];
                                     scrollToBottom();
                                 }
@@ -170,7 +208,6 @@ createApp({
                             assistantMessage.content += createItalicText(dataStr);
                             assistantMessage.isHtml = true;
                             if (assistantAdded) {
-                                assistantMessage.displayContent = assistantMessage.content;
                                 messages.value = [...messages.value];
                                 scrollToBottom();
                             }
@@ -184,8 +221,10 @@ createApp({
                                     assistantAdded = true;
                                 }
                                 handleSpecialContent(assistantMessage, data);
-                                messages.value = [...messages.value];
-                                scrollToBottom();
+                                if (assistantAdded) {
+                                    messages.value = [...messages.value];
+                                    scrollToBottom();
+                                }
                             } catch (e) {
                                 console.error('Link parse error:', e);
                             }

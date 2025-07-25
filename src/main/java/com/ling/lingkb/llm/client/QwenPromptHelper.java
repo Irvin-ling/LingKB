@@ -34,4 +34,19 @@ public class QwenPromptHelper {
         JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
         lastJson.put("content", prompt.toString());
     }
+
+    public static void buildToEnPrompt(JSONObject requestJson, String question) {
+        JSONArray messages = requestJson.getJSONArray("messages");
+        JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
+        String prompt = "Translate the following question into English. Only provide the translated text and " +
+                "without quotation marks at the end, no explanations or additional content:\n\n\"" + question + "\"";
+        lastJson.put("content", prompt);
+    }
+
+    public static void buildToZhPrompt(JSONObject requestJson, String question) {
+        JSONArray messages = requestJson.getJSONArray("messages");
+        JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
+        String prompt = "将以下英文问题翻译成中文。仅提供翻译后的文本且收尾不带引号，不包含任何解释或额外内容:\n\n" + "\"" + question + "\"";
+        lastJson.put("content", prompt);
+    }
 }

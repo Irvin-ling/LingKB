@@ -58,7 +58,6 @@ public class QwenClient {
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Connection", "keep-alive");
-        System.out.println(requestJson);
 
         try {
             restTemplate.execute(qwenUrl, HttpMethod.POST,
@@ -75,7 +74,6 @@ public class QwenClient {
                         }
                         return null;
                     });
-            System.out.println(1);
         } catch (Exception e) {
             log.error("Error in fetchStreamData", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
