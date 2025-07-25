@@ -3,9 +3,9 @@
 ## 一、项目简介
 本项目是一个基于Java 11环境的企业知识库系统，采用Spring Boot框架搭建，使用MySQL存储数据，结合JVector向量检索库和HanLP自然语言处理库构建。
 系统外接Qwen3轻量级大语言模型和向量嵌入模型，能够实现知识的高效存储、检索和智能问答功能。
-开发初衷是在Java的技术生态下，以`最简洁直接的逻辑链、最低的成本`实现企业知识库的落地；在熟悉或易上手的技术架构下，快速地搭建好用的知识体系。
+开发初衷是在Java的技术生态下，以**最简洁直接的逻辑链、最低的成本**实现企业知识库的落地；在熟悉或易上手的技术架构下，快速地搭建好用的知识体系。
 
-系统包含两大核心流程：
+**系统包含两大核心流程：**
 - 知识入库流程：处理各类文档，提取内容并转换为向量存储
 
  ![数据入库](src/main/resources/data_feed.png)
@@ -29,7 +29,7 @@ spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
 ### 2.3 大语言模型服务部署（以 Qwen3 为例）
-> **提示**：若选择直接调用在线的外部大语言模型服务，可跳过本章节。
+> **提示**：若选择直接调用在线的外部大语言模型服务，可跳过本节。
 1. 下载模型服务包：从[Hugging Face](https://huggingface.co/Mozilla/Qwen3-0.6B-llamafile/tree/main)获取轻量级语言模型
 2. 启动服务（建议在Linux环境下运行）：
 ```bash
@@ -38,7 +38,7 @@ chmod +x Qwen_Qwen3-0.6B-Q8_0.llamafile
 ```bash
 ./Qwen_Qwen3-0.6B-Q8_0.llamafile --host 0.0.0.0 --port 6666 --server &
 ```
-3. 验证服务：Post访问[/docs接口](http://${serverIP}:6666/v1/chat/completions)进行对话测试，参数如下：
+3. 验证服务：Post访问[http://${serverIP}:6666/v1/chat/completions](http://${serverIP}:6666/v1/chat/completions)进行对话测试，参数如下：
 ```json
  {
   "messages": [
@@ -51,6 +51,7 @@ chmod +x Qwen_Qwen3-0.6B-Q8_0.llamafile
 ```
 
 ### 2.4 向量嵌入模型部署
+> **提示**：若选择直接调用在线的外部嵌入模型服务，可跳过本节。
 1. 下载嵌入模型：从[Hugging Face](https://huggingface.co/Mungert/Qwen3-Embedding-0.6B-GGUF/tree/main)获取向量生成模型
 2. 安装llama.cpp运行环境（参考模型界面README）
 3. 启动服务：
@@ -69,7 +70,7 @@ data.parser.tess.path=D:/tessdata/
 #### 文件上传路径
 system.upload.file.dir=D:/knowledge_files/
 
-#### 模型服务地址
+#### 模型服务地址(请求地址需要修改)
 qwen.embedding.url=http://localhost:6677/v1/embeddings
 qwen.chat.url=http://localhost:6666/v1/chat/completions
 
