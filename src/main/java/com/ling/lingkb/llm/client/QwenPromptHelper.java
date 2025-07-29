@@ -38,8 +38,8 @@ public class QwenPromptHelper {
     public static void buildToEnPrompt(JSONObject requestJson, String question) {
         JSONArray messages = requestJson.getJSONArray("messages");
         JSONObject lastJson = messages.getJSONObject(messages.size() - 1);
-        String prompt = "Translate the following question into English. Only provide the translated text and " +
-                "without quotation marks at the end, no explanations or additional content:\n\n\"" + question + "\"";
+        String prompt = "你的任务是将提供的中文文本直接翻译成英文，且输出中不要有文本之外的字符。\n以下是需要翻译的中文文本：\n<chinese_text>\n" + question +
+                "\n</chinese_text>\n在翻译时，直接输出该中文文本的英文翻译，不要添加额外的内容或标签。\n";
         lastJson.put("content", prompt);
     }
 

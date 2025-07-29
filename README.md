@@ -82,7 +82,7 @@ vector.bak.path=D:/temp/vector/data.bak
 
 
 ## 三、参与贡献
-欢迎参与项目开发或反馈使用问题，联系方式：
+欢迎参与项目开发或反馈使用问题，联系方式↓  
 邮箱：zhengh@dtdream.com
 
 ## 四、鸣谢
