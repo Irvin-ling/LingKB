@@ -8,10 +8,20 @@
 **系统包含两大核心流程：**
 - 知识入库流程：处理各类文档，提取内容并转换为向量存储
 
- ![数据入库](src/main/resources/data_feed.png)
+ ![数据入库](src/main/resources/png/data_feed.png)
 - 智能检索流程：基于用户问题，通过向量相似度匹配相关知识
 
- ![RAG检索](src/main/resources/data_query.png)
+ ![RAG检索](src/main/resources/png/data_query.png)
+ 
+**系统界面截图：**
+ - 数据投喂
+ 
+  ![数据投喂](src/main/resources/png/data.png)
+ - 对话框
+ 
+  ![对话框](src/main/resources/png/dialog.png)
+ 
+ 
 
 ## 二、环境准备与部署步骤
 
