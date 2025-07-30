@@ -48,7 +48,7 @@ chmod +x Qwen_Qwen3-0.6B-Q8_0.llamafile
 ```bash
 ./Qwen_Qwen3-0.6B-Q8_0.llamafile --host 0.0.0.0 --port 6666 --server &
 ```
-3. 验证服务：Post访问[http://${serverIP}:6666/v1/chat/completions](http://${serverIP}:6666/v1/chat/completions)进行对话测试，参数如下：
+3. 验证服务：Post访问[http://`serverIP`:6666/v1/chat/completions]进行对话测试，参数如下：
 ```json
  {
   "messages": [
